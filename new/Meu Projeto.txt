@@ -1,0 +1,1118 @@
+// Arquivo: %i  
+// Arquivo: %i  
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\MainApp.java  
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+public class MainApp extends Application {
+    
+    private static Stage stagePrincipal; // Guarda a janela para permitir a troca de telas
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        stagePrincipal = primaryStage;
+        
+        // Configura para abrir PRIMEIRO na tela de cadastro de veículos
+        // Lembre-se: O arquivo "GestaoFrotas.fxml" deve estar dentro da pasta "view" no seu projeto
+        trocarTela("/view/GestaoFrotas.fxml", "Passo 1: Cadastro de Veículos");
+    }
+
+    /**
+     * Método utilitário para mudar de tela dinamicamente durante a execução.
+     * Como é um método static, usamos 'MainApp.class.getResource' para localizar os arquivos.
+     */
+    public static void trocarTela(String caminhoFxml, String titulo) {
+        try {
+            // 1. Carrega o arquivo FXML usando o caminho informado
+            FXMLLoader loader = new FXMLLoader(MainApp.class.getResource(caminhoFxml));
+            Parent root = loader.load(); 
+            
+            // 2. Configura e exibe a nova cena na janela principal
+            stagePrincipal.setTitle(titulo);
+            stagePrincipal.setScene(new Scene(root, 1000, 600));
+            stagePrincipal.show();
+            
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar a tela: " + caminhoFxml);
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        // Inicia a aplicação JavaFX
+        launch(args);
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\controller\CadastroSensoresController.java  
+package controller;
+
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import model.*;
+
+public class CadastroSensoresController {
+
+    @FXML private ComboBox<Veiculo> comboVeiculoSensor;
+    @FXML private TextField txtNomeSensor;
+    @FXML private ComboBox<String> comboTipoSensor;
+    @FXML private Button btnInstalarSensor;
+    @FXML private TableView<Sensor> tblSensores;
+    @FXML private TableColumn<Sensor, String> colSensorNome;
+    @FXML private TableColumn<Sensor, String> colSensorTipo;
+
+    private static int contadorSensorId = 100;
+
+    @FXML
+    public void initialize() {
+        // Preenche o ComboBox com os veículos criados na primeira tela
+        comboVeiculoSensor.setItems(GestaoFrotaController.getListaVeiculosGlobal());
+        
+        // Define os tipos de sensores baseados nas classes que você possui no modelo
+        comboTipoSensor.getItems().addAll("Velocidade", "Temperatura", "Lógico (On/Off)", "Geográfico (GPS)");
+
+        // Configura as colunas da tabela de visualização
+        colSensorNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
+        colSensorTipo.setCellValueFactory(new PropertyValueFactory<>("categoria"));
+        
+        // Atualiza a tabela dinamicamente ao trocar de veículo
+        comboVeiculoSensor.getSelectionModel().selectedItemProperty().addListener((obs, antigo, novoVeiculo) -> {
+            if (novoVeiculo != null) {
+                // Usa o método correto: getConfiguracao() que retorna a List<Sensor>
+                tblSensores.setItems(FXCollections.observableArrayList(novoVeiculo.getConfiguracao()));
+            } else {
+                tblSensores.getItems().clear();
+            }
+        });
+    }
+
+    @FXML
+    private void handleInstalarSensor() {
+        Veiculo veiculoSelecionado = comboVeiculoSensor.getValue();
+        String nome = txtNomeSensor.getText();
+        String tipo = comboTipoSensor.getValue();
+
+        if (veiculoSelecionado == null || nome == null || nome.trim().isEmpty() || tipo == null) {
+            System.out.println("Erro: Selecione o veículo, dê um nome e escolha o tipo do sensor.");
+            return;
+        }
+
+        Sensor novoSensor;
+        int id = contadorSensorId++;
+
+        // Instanciação polimórfica respeitando estritamente os construtores das suas classes filhas
+        switch (tipo) {
+            case "Velocidade":
+                novoSensor = new SensorVelocidade(id, nome.trim(), "Telemetria", 0.0);
+                break;
+            case "Temperatura":
+                novoSensor = new SensorTemperatura(id, nome.trim(), "Telemetria", 20.0);
+                break;
+            case "Lógico (On/Off)":
+                novoSensor = new SensorLogico(id, nome.trim(), "Segurança", false);
+                break;
+            case "Geográfico (GPS)":
+                novoSensor = new SensorGeografico(id, nome.trim(), 100.0, 100.0);
+                break;
+            default:
+                return;
+        }
+
+        // Associa o dispositivo ao carro usando o método adicionarSensor do seu modelo
+        veiculoSelecionado.adicionarSensor(novoSensor);
+
+        // Atualiza a lista da tabela
+        tblSensores.setItems(FXCollections.observableArrayList(veiculoSelecionado.getConfiguracao()));
+        
+        txtNomeSensor.clear();
+        System.out.println("Sensor '" + nome + "' instalado no veículo " + veiculoSelecionado.getIdentificador());
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\controller\GestaoFrotaController.java  
+package controller;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
+import model.Veiculo;
+
+public class GestaoFrotaController {
+
+    @FXML private TextField txtIdentificadorVeiculo;
+    @FXML private Button btnSalvarVeiculo;
+    @FXML private TableView<Veiculo> tblVeiculos;
+    @FXML private TableColumn<Veiculo, String> colVeiculoId;
+
+    // Lista estática centralizada em memória para simular a base de dados compartilhada pelas telas
+    private static ObservableList<Veiculo> listaVeiculosGlobal = FXCollections.observableArrayList();
+    private static int contadorId = 1;
+
+    @FXML
+    public void initialize() {
+        // Vincula a coluna ao método getIdentificador() da classe Veiculo
+        colVeiculoId.setCellValueFactory(new PropertyValueFactory<>("identificador"));
+        
+        // Alimenta a tabela
+        tblVeiculos.setItems(listaVeiculosGlobal);
+    }
+
+    @FXML
+    private void handleSalvarVeiculo() {
+        String identificador = txtIdentificadorVeiculo.getText();
+        
+        if (identificador == null || identificador.trim().isEmpty()) {
+            System.out.println("Aviso: Digite um identificador/placa válida!");
+            return;
+        }
+
+        // Instancia respeitando o construtor real: Veiculo(int id, String identificador, String tipoIdentificador)
+        Veiculo novoVeiculo = new Veiculo(contadorId++, identificador.trim().toUpperCase(), "Placa Comercial");
+        
+        listaVeiculosGlobal.add(novoVeiculo);
+        txtIdentificadorVeiculo.clear();
+        System.out.println("Veículo [" + identificador + "] guardado com sucesso.");
+    }
+
+    public static ObservableList<Veiculo> getListaVeiculosGlobal() {
+        return listaVeiculosGlobal;
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\controller\PainelMonitorizacaoController.java  
+package controller;
+
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import model.*;
+import java.util.Arrays;
+
+public class PainelMonitorizacaoController {
+
+    @FXML private ComboBox<Veiculo> comboVeiculoMonitoramento;
+    @FXML private ListView<String> listAlertasAtivos;
+    
+    // Tabela de Simulação Física de Dispositivos
+    @FXML private TableView<Sensor> tblSensoresSimulacao;
+    @FXML private TableColumn<Sensor, String> colSimSensorNome;
+    @FXML private TableColumn<Sensor, String> colSimSensorValor;
+    
+    // Painel inferior de ajuste manual (+ / -)
+    @FXML private Label lblSensorSelecionadoSim;
+    @FXML private Label lblValor1Nome;
+    @FXML private Button btnDiminuirV1;
+    @FXML private Button btnAumentarV1;
+    @FXML private HBox boxValor2Controle;
+    @FXML private Button btnDiminuirV2;
+    @FXML private Button btnAumentarV2;
+    
+    // Histórico de Eventos (Log de Auditoria)
+    @FXML private TableView<RegistroAlerta> tblHistorico;
+    @FXML private TableColumn<RegistroAlerta, String> colVeiculo;
+    @FXML private TableColumn<RegistroAlerta, String> colRegra;
+    @FXML private TableColumn<RegistroAlerta, String> colMensagem;
+    @FXML private TableColumn<RegistroAlerta, String> colInicio;
+    @FXML private TableColumn<RegistroAlerta, String> colFim;
+    @FXML private TableColumn<RegistroAlerta, String> colDuracao;
+
+    // Motor central de Processamento Lógico de Alertas Combinatórios
+    private static GerenciadorAlerta gerenciadorAlerta = new GerenciadorAlerta();
+
+    @FXML
+    public void initialize() {
+        // Popula o ComboBox de seleção global do carro ativo
+        comboVeiculoMonitoramento.setItems(GestaoFrotaController.getListaVeiculosGlobal());
+
+        // Mapeamento das propriedades da tabela de simulação
+        colSimSensorNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
+        colSimSensorValor.setCellValueFactory(cellData -> {
+            // Executa o método abstrato getValores() que você implementou
+            double[] v = cellData.getValue().getValores();
+            return new javafx.beans.property.SimpleStringProperty(Arrays.toString(v));
+        });
+
+        // Configuração do Log Histórico Lateral
+        colVeiculo.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getCondicao().getVeiculo().getIdentificador()));
+        colRegra.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getCondicao().getNomeRegra()));
+        colMensagem.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getCondicao().getMensagemAlerta()));
+        
+        colInicio.setCellValueFactory(new PropertyValueFactory<>("horarioInicio"));
+        colFim.setCellValueFactory(new PropertyValueFactory<>("horarioFim"));
+        colDuracao.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getDuracaoFormatada()));
+
+        // Oculta os eixos secundários no início
+        boxValor2Controle.setVisible(false);
+    }
+
+    @FXML
+    private void handleSelecaoVeiculoGeral() {
+        Veiculo veiculoEscolhido = comboVeiculoMonitoramento.getValue();
+        if (veiculoEscolhido == null) return;
+
+        // Limpa a seleção anterior de edição de hardware
+        lblSensorSelecionadoSim.setText("Nenhum sensor selecionado");
+        boxValor2Controle.setVisible(false);
+
+        // Alimenta a tabela de telemetria apenas com os sensores do veículo escolhido
+        tblSensoresSimulacao.setItems(FXCollections.observableArrayList(veiculoEscolhido.getConfiguracao()));
+        
+        // Atualiza a listagem de condições que afetam este carro
+        atualizarPainelDinamico();
+    }
+
+    @FXML
+    private void handleSelecaoSensorSimulado() {
+        Sensor sensorSelecionado = tblSensoresSimulacao.getSelectionModel().getSelectedItem();
+        if (sensorSelecionado == null) return;
+
+        lblSensorSelecionadoSim.setText("Dispositivo: " + sensorSelecionado.getNome());
+
+        // Identifica se possui mais de um valor de saída (ex: SensorGeografico que possui Lat e Long)
+        double[] valores = sensorSelecionado.getValores();
+        if (valores != null && valores.length > 1) {
+            lblValor1Nome.setText("Lat:");
+            boxValor2Controle.setVisible(true); // Exibe os botões +/- adicionais para Longitude
+        } else {
+            lblValor1Nome.setText("Valor:");
+            boxValor2Controle.setVisible(false);
+        }
+    }
+
+    @FXML
+    private void handleAumentarValor1() {
+        alterarMecanismoSensor(0, 5.0);
+    }
+
+    @FXML
+    private void handleDiminuirValor1() {
+        alterarMecanismoSensor(0, -5.0);
+    }
+
+    @FXML
+    private void handleAumentarValor2() {
+        alterarMecanismoSensor(1, 0.05); // Passos menores para coordenadas geográficas
+    }
+
+    @FXML
+    private void handleDiminuirValor2() {
+        alterarMecanismoSensor(1, -0.05);
+    }
+
+    /**
+     * Aplica a variação física simulada convertendo o dado para a sua classe especializada correspondente
+     */
+    private void alterarMecanismoSensor(int indice, double variacao) {
+        Sensor sensor = tblSensoresSimulacao.getSelectionModel().getSelectedItem();
+        if (sensor == null) return;
+
+        double[] valoresAtuais = sensor.getValores();
+
+        // Faz o tratamento com base em cada uma das subclasses de sensores do seu modelo
+        if (sensor instanceof SensorVelocidade) {
+            SensorVelocidade sv = (SensorVelocidade) sensor;
+            sv.setValorAtual(valoresAtuais[0] + variacao);
+        } 
+        else if (sensor instanceof SensorTemperatura) {
+            SensorTemperatura st = (SensorTemperatura) sensor;
+            st.setValorAtual(valoresAtuais[0] + variacao);
+        } 
+        else if (sensor instanceof SensorLogico) {
+            SensorLogico sl = (SensorLogico) sensor;
+            // Alterna o estado booleano baseado no sinal do clique
+            sl.setValorAtual(valoresAtuais[0] + variacao > 0.5);
+        } 
+        else if (sensor instanceof SensorGeografico) {
+            SensorGeografico sg = (SensorGeografico) sensor;
+            double novaLat = valoresAtuais[0] + (indice == 0 ? variacao : 0);
+            double novaLong = valoresAtuais[1] + (indice == 1 ? variacao : 0);
+            // Sobrescreve instanciando as novas posições simuladas do GPS
+            int idAtual = tblSensoresSimulacao.getSelectionModel().getSelectedIndex();
+            Veiculo v = comboVeiculoMonitoramento.getValue();
+            if (v != null) {
+                // Atualiza o estado recriando o sensor geográfico na lista
+                SensorGeografico novoGps = new SensorGeografico(1, sg.getNome(), novaLat, novaLong);
+                v.getConfiguracao().set(v.getConfiguracao().indexOf(sg), novoGps);
+                tblSensoresSimulacao.getSelectionModel().select(novoGps);
+            }
+        }
+
+        // Atualiza a interface gráfica da tabela
+        tblSensoresSimulacao.refresh();
+
+        // Dispara o motor lógico para recalcular os circuitos AND combinatórios
+        gerenciadorAlerta.processarMonitoramento();
+
+        // Atualiza os alarmes vigentes na tela
+        atualizarPainelDinamico();
+    }
+
+    private void atualizarPainelDinamico() {
+        Veiculo veiculoAtual = comboVeiculoMonitoramento.getValue();
+        if (veiculoAtual == null) return;
+
+        // 1. Atualiza a lista visual de alertas críticos correntes (Filtra pelo veículo ativo)
+        listAlertasAtivos.getItems().clear();
+        for (RegistroAlerta registro : gerenciadorAlerta.obterAlertasAtivos()) {
+            if (registro.getCondicao().getVeiculo() != null && 
+                registro.getCondicao().getVeiculo().getIdentificador().equals(veiculoAtual.getIdentificador())) {
+                
+                listAlertasAtivos.getItems().add(
+                    "🚨 [" + registro.getCondicao().getNomeRegra() + "] -> " + registro.getCondicao().getMensagemAlerta()
+                );
+            }
+        }
+
+        // 2. Atualiza a tabela histórica (Log global completo de auditoria)
+        tblHistorico.setItems(FXCollections.observableArrayList(gerenciadorAlerta.getHistoricoCompleto()));
+    }
+
+    public static GerenciadorAlerta getGerenciadorAlerta() {
+        return gerenciadorAlerta;
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Autenticavel.java  
+package model;
+public interface Autenticavel{
+    
+    int getQuantidadeFatores();
+
+    default boolean validarFator(String senha) {
+        return true; 
+    }
+
+    default boolean validarFator(String senha, String token) {
+        return true;
+    }
+
+    default boolean validarFator(String senha, String token, String biometria) {
+        return true;
+    }
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Cliente.java  
+package model;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Cliente extends Usuario implements Autenticavel {
+    private String email;
+    private String senha;
+
+    private List<Veiculo> frota = new ArrayList<>();
+    
+    
+    Cliente(String nome, String email, String senha) {
+        this.nome = nome; 
+        this.email = email;
+        this.senha = senha;
+    }
+
+    
+    @Override
+    public int getQuantidadeFatores() {
+        return 1; // Cliente usa apenas 1 fator (senha)
+    }
+
+    
+    @Override
+    public boolean validarFator(String senhaInformada) {
+        return true;
+    }
+
+    
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getSenha() { return senha; }
+    public void setSenha(String senha) { this.senha = senha; }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Comparador.java  
+package model;
+
+public enum Comparador {
+    IGUAL,
+    MAIOR_QUE,
+    MENOR_QUE,
+    DIFERENTE
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\CondicaoAlerta.java  
+package model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Representa a regra de negócio do alerta combinatório (Porta AND).
+ * Agrupa todos os gatilhos necessários que devem ser simultaneamente verdadeiros
+ * para disparar um alerta para um veículo específico.
+ */
+public class CondicaoAlerta {
+    
+    private String nomeRegra;
+    private String mensagemAlerta;
+    protected Veiculo veiculo;
+    
+    // Lista única tipada com a nossa estrutura de dados GatilhoSensor
+    protected List<GatilhoSensor> sensoresMonitorados = new ArrayList<>();
+    protected List<Boolean> microCondicao = new ArrayList<>();
+    
+    public CondicaoAlerta(String nomeRegra, String mensagem) {
+        this.nomeRegra = nomeRegra;
+        this.mensagemAlerta = mensagem; 
+    }
+    
+    public void adicionarVeiculo(Veiculo v) { 
+        this.veiculo = v;
+    }
+    
+    /**
+     * Sobrecarga 1: Para sensores comuns de valor único (Velocidade, Temperatura, Porta, etc.).
+     * Automaticamente define o índice de leitura do array como 0.
+     */
+    public void adicionarSensores(Sensor s, Comparador comparador, double valorRef) {
+        GatilhoSensor novoGatilho = new GatilhoSensor(s, 0, comparador, valorRef);
+        this.sensoresMonitorados.add(novoGatilho);
+    }
+
+    /**
+     * Sobrecarga 2: Específica para o SensorGeografico (GPS) ou outros sensores multi-valor.
+     * Permite especificar qual posição do array testar (0 para Latitude, 1 para Longitude).
+     */
+    public void adicionarSensores(Sensor s, int indice, Comparador comparador, double valorRef) {
+        GatilhoSensor novoGatilho = new GatilhoSensor(s, indice, comparador, valorRef);
+        this.sensoresMonitorados.add(novoGatilho);
+    }
+    
+    /**
+     * Motor do circuito lógico combinatório. 
+     * Varre todos os gatilhos, busca os valores reais atualizados e faz a soma AND.
+     */
+    public boolean avaliarCondicaoGeral() {
+        if (sensoresMonitorados.isEmpty()) {
+            return false; // Se não houver regras configuradas, o circuito retorna falso
+        }
+
+        // Limpa os resultados parciais anteriores antes de uma nova checagem em tempo real
+        this.microCondicao.clear();
+        
+        // 1. Fase de Varredura: Calcula o resultado lógico individual de cada gatilho
+        for (GatilhoSensor gatilho : sensoresMonitorados) {
+            
+            // Pega o array double[] definido na classe abstrata Sensor
+            double[] valoresDoSensor = gatilho.getSensor().getValores();
+            
+            // Extrai o valor na posição configurada (0 para comuns, 0 ou 1 para GPS)
+            double valorSensor = valoresDoSensor[gatilho.getIndiceValor()];
+            
+            boolean resultadoMicro = false;
+            Comparador operacao = gatilho.getComparador();
+            double ref = gatilho.getValorReferencia();
+            
+            // Avalia o critério com base no seu Enum Comparador
+            if (operacao == Comparador.MAIOR_QUE) {
+                resultadoMicro = valorSensor > ref;
+            } else if (operacao == Comparador.MENOR_QUE) {
+                resultadoMicro = valorSensor < ref;
+            } else if (operacao == Comparador.IGUAL) {
+                resultadoMicro = valorSensor == ref;
+            } else if (operacao == Comparador.DIFERENTE) {
+                resultadoMicro = valorSensor != ref;
+            }
+            
+            // Adiciona o bit resultante (true/false) na lista de parciais
+            this.microCondicao.add(resultadoMicro);
+        }
+        
+        // 2. Fase Combinatória: Multiplicação acumulada AND (&) entre todas as micro-condições
+        boolean resultadoAnd = true;
+        
+        for (boolean bitEntrada : microCondicao) {
+            resultadoAnd = resultadoAnd & bitEntrada;
+            
+            // Se encontrar qualquer bit falso (0), o AND inteiro quebra na hora
+            if (!resultadoAnd) {
+                return false;
+            }
+        }
+        
+        return resultadoAnd;
+    }
+
+    // Getters para a camada de visão (JavaFX) ou gerenciador de alertas
+    public String getNomeRegra() { return nomeRegra; }
+    public String getMensagemAlerta() { return mensagemAlerta; }
+    public Veiculo getVeiculo() { return veiculo; }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Database.java  
+package model;
+
+import java.sql.*;
+import com.j256.ormlite.jdbc.JdbcConnectionSource;
+
+public class Database
+{
+   private String databaseName = null;
+   private JdbcConnectionSource connection = null;
+   
+   public Database(String databaseName) {
+       this.databaseName = databaseName;
+   }    
+   
+   public JdbcConnectionSource getConnection() throws SQLException {
+      if ( databaseName == null ) {
+          throw new SQLException("database name is null");
+      }
+      if ( connection == null ) {
+          try {
+              connection = new JdbcConnectionSource("jdbc:sqlite:"+databaseName);             
+            } catch ( Exception e ) {
+                System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+                System.exit(0);
+            }
+      }
+      return connection;
+   }
+   
+   public void close() {
+       if ( connection != null ) {
+           try {
+               connection.close();
+               this.connection = null;
+           } catch (java.lang.Exception e) {
+               System.err.println(e);
+           }
+       }
+   }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\GatilhoSensor.java  
+package model;
+
+/**
+ * Representa a configuração de um gatilho individual para um sensor.
+ * Une o dispositivo físico a um critério de teste específico usando o Enum Comparador.
+ */
+public class GatilhoSensor {
+    
+    private Sensor sensor;
+    private int indiceValor;
+    private Comparador comparador; 
+    private double valorReferencia;
+
+    /**
+     * Construtor completo para instanciar a regra de teste do sensor.
+     */
+    public GatilhoSensor(Sensor sensor, int indiceValor, Comparador comparador, double valorReferencia) {
+        this.sensor = sensor;
+        this.indiceValor = indiceValor;
+        this.comparador = comparador;
+        this.valorReferencia = valorReferencia;
+    }
+
+    // =========================================================================
+    // GETTERS
+    // =========================================================================
+    
+    public Sensor getSensor() {
+        return this.sensor;
+    }
+
+    public int getIndiceValor() {
+        return this.indiceValor;
+    }
+
+    public Comparador getComparador() {
+        return this.comparador;
+    }
+
+    public double getValorReferencia() {
+        return this.valorReferencia;
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\GerenciadorAlerta.java  
+package model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Painel de Monitoramento Central.
+ * Responsável por analisar as regras em tempo real e gerenciar o histórico de eventos.
+ */
+public class GerenciadorAlerta {
+    
+    // Lista de circuitos lógicos que o sistema deve vigiar
+    private List<CondicaoAlerta> regrasCadastradas = new ArrayList<>();
+    
+    // O histórico completo de alertas (ativos e encerrados) para o painel
+    private List<RegistroAlerta> historicoAlertas = new ArrayList<>();
+
+    public void cadastrarRegra(CondicaoAlerta condicao) {
+        this.regrasCadastradas.add(condicao);
+    }
+
+    /**
+     * Este método roda a cada atualização do sistema (Tick do relógio).
+     * Ele avalia os circuitos e gerencia o nascimento e morte dos alertas no histórico.
+     */
+    public void processarMonitoramento() {
+        for (CondicaoAlerta regra : regrasCadastradas) {
+            
+            // Pergunta para o circuito lógico se a condição de perigo está ativa AGORA
+            boolean emPerigoAgora = regra.avaliarCondicaoGeral(); // Nota: usando avaliarCondicaoGeral()
+            
+            // Procura se já existe um alerta aberto na história para essa mesma regra
+            RegistroAlerta alertaAtual = buscarAlertaAtivoPorRegra(regra);
+
+            if (emPerigoAgora) {
+                // CENÁRIO A: Está em perigo e não tinha alerta aberto ainda -> Cria um novo!
+                if (alertaAtual == null) {
+                    RegistroAlerta novoAlerta = new RegistroAlerta(regra);
+                    this.historicoAlertas.add(novoAlerta);
+                    System.out.println("🚨 [NOVO ALERTA] " + regra.getNomeRegra() + " iniciado para o veículo " + regra.getVeiculo().getIdentificador());
+                }
+                // Se já existia (alertaAtual != null), não faz nada. O tempo continua correndo.
+                
+            } else {
+                // CENÁRIO B: O veículo voltou ao normal, mas havia um alerta aberto -> Encerra ele!
+                if (alertaAtual != null) {
+                    alertaAtual.encerrarAlerta();
+                    System.out.println("✅ [ALERTA RESOLVIDO] " + regra.getNomeRegra() + " finalizado. Duração: " + alertaAtual.getDuracaoFormatada());
+                }
+            }
+        }
+    }
+
+    /**
+     * Busca no histórico se existe algum alerta que ainda está aberto (ativo) para uma regra.
+     */
+    private RegistroAlerta buscarAlertaAtivoPorRegra(CondicaoAlerta regra) {
+        for (RegistroAlerta registro : historicoAlertas) {
+            if (registro.isAtivo() && registro.getCondicao() == regra) {
+                return registro;
+            }
+        }
+        return null; // Não há alerta em aberto para essa regra
+    }
+
+    /**
+     * Retorna apenas os alertas que estão acontecendo neste exato momento (Para o painel piscar em vermelho)
+     */
+    public List<RegistroAlerta> obterAlertasAtivos() {
+        List<RegistroAlerta> ativos = new ArrayList<>();
+        for (RegistroAlerta r : historicoAlertas) {
+            if (r.isAtivo()) ativos.add(r);
+        }
+        return ativos;
+    }
+
+    /**
+     * Retorna o histórico completo (Para preencher uma tabela de auditoria)
+     */
+    public List<RegistroAlerta> getHistoricoCompleto() {
+        return this.historicoAlertas;
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\RegistroAlerta.java  
+package model;
+
+import java.time.LocalDateTime;
+import java.time.Duration;
+
+/**
+ * Representa um evento de alerta que aconteceu no histórico do sistema.
+ * Registra o momento de início, fim e calcula a duração do alerta.
+ */
+public class RegistroAlerta {
+    
+    private CondicaoAlerta condicao;
+    private LocalDateTime horarioInicio;
+    private LocalDateTime horarioFim;
+    private boolean ativo;
+
+    public RegistroAlerta(CondicaoAlerta condicao) {
+        this.condicao = condicao;
+        this.horarioInicio = LocalDateTime.now(); // Captura a hora exata do disparo
+        this.ativo = true; // Nasce ativo
+    }
+
+    /**
+     * Finaliza o alerta quando a situação do veículo volta ao normal.
+     */
+    public void encerrarAlerta() {
+        this.horarioFim = LocalDateTime.now();
+        this.ativo = false;
+    }
+
+    /**
+     * Calcula há quanto tempo o alerta está ativo ou quanto tempo ele durou.
+     */
+    public String getDuracaoFormatada() {
+        LocalDateTime fim = (this.ativo) ? LocalDateTime.now() : this.horarioFim;
+        Duration duracao = Duration.between(horarioInicio, fim);
+        
+        long segundos = duracao.toSeconds();
+        if (segundos < 60) {
+            return segundos + " segundos";
+        }
+        return duracao.toMinutes() + " minutos e " + (segundos % 60) + " segundos";
+    }
+
+    // =========================================================================
+    // GETTERS
+    // =========================================================================
+    public CondicaoAlerta getCondicao() { return condicao; }
+    public LocalDateTime getHorarioInicio() { return horarioInicio; }
+    public LocalDateTime getHorarioFim() { return horarioFim; }
+    public boolean isAtivo() { return ativo; }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Repositorio.java  
+package model;
+
+import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.table.TableUtils;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.ArrayList;
+
+public class Repositorio<T, ID> {
+
+    private static Database database;
+    private Dao<T, ID> dao;
+    private List<T> loadedEntities;
+    private T loadedEntity;
+    private Class<T> entityClass;
+
+    public Repositorio(Database database, Class<T> entityClass) {
+        this.entityClass = entityClass;
+        setDatabase(database);
+        loadedEntities = new ArrayList<>();
+    }
+
+    public void setDatabase(Database database) {
+        Repositorio.database = database;
+        try {
+            dao = DaoManager.createDao(database.getConnection(), entityClass);
+            TableUtils.createTableIfNotExists(database.getConnection(), entityClass);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+    }
+
+    public T create(T entity) {
+        try {
+            int nrows = dao.create(entity);
+            if (nrows == 0)
+                throw new SQLException("Error: object not saved");
+            this.loadedEntity = entity;
+            loadedEntities.add(entity);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+        return entity;
+    }
+
+    public void update(T entity) {
+        try {
+            dao.update(entity);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+    }
+
+    public void delete(T entity) {
+        try {
+            dao.delete(entity);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+    }
+
+    public T loadFromId(ID id) {
+        try {
+            this.loadedEntity = dao.queryForId(id);
+            if (this.loadedEntity != null)
+                this.loadedEntities.add(this.loadedEntity);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+        return this.loadedEntity;
+    }
+
+    public List<T> loadAll() {
+        try {
+            this.loadedEntities = dao.queryForAll();
+            if (!this.loadedEntities.isEmpty())
+                this.loadedEntity = this.loadedEntities.get(0);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+        return this.loadedEntities;
+    }
+
+    // Getters e setters podem ser adicionados se desejar
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Repositorios.java  
+package model;
+
+public class Repositorios {
+    public static Database database = new Database("app.sqlite");
+    public static final Repositorio<Sensor, Integer> SENSOR = new Repositorio<>(database, Sensor.class);
+    public static final Repositorio<Veiculo, Integer> VEICULO = new Repositorio<>(database, Veiculo.class);
+    public static final Repositorio<Cliente, Integer> CLIENTE = new Repositorio<>(database, Cliente.class);
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Sensor.java  
+package model;
+
+public abstract class Sensor {
+    private int id;
+    private String nome;
+    private String categoria;
+    public abstract double[] getValores();
+    
+    public Sensor(int id, String nome, String categoria) {
+        this.id = id;
+        this.nome = nome;
+        this.categoria = categoria;
+    }
+
+    // Getters e Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+    public String getNome() { return nome; }
+    public String getCategoria() { return categoria; }
+    
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\SensorGeografico.java  
+package model;
+import java.util.Random;
+
+public class SensorGeografico extends Sensor {
+    private double latitude;
+    private double longitude;
+    private static final Random random = new Random();
+    
+    public SensorGeografico(int id, String nome){
+        super(id, nome, "Telemetria");
+        this.latitude = 100;
+        this.longitude = 100;
+        //-16.67744721562849, -49.24250895082047
+    }
+    
+    public void simularDeslocamentoAleatorio() {
+        // 1. Sorteia uma distância de 0 a 200 metros
+        double distancia = random.nextDouble() * 200.0;
+        
+        // 2. Sorteia uma direção (ângulo de 0 a 360 graus em radianos)
+        double angulo = random.nextDouble() * 2 * Math.PI;
+
+        // 3. Decompõe a distância percorrida nos eixos X e Y
+        double deltaX = distancia * Math.cos(angulo);
+        double deltaY = distancia * Math.sin(angulo);
+
+        // 4. Aplica o movimento diretamente nas coordenadas atuais
+        this.latitude += deltaX;
+        this.longitude += deltaY;
+    }
+    
+    
+    public SensorGeografico(int id, String nome, double latitude, double longitude) {
+        super(id, nome, "Telemetria");
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    @Override
+    public double[] getValores() {
+        return new double[] { this.latitude, this.longitude }; // Array de tamanho 2!
+    }
+    
+    public String getLatLong(){return "latlong = " + latitude + ", " + longitude;}
+    
+    public void atualizarCoordenadas(double latitude, double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\SensorLogico.java  
+package model;
+public class SensorLogico extends Sensor {
+    private boolean valorAtual;
+    
+
+    public SensorLogico(int id, String nome, String categoria, boolean valorInicial) {
+        super(id, nome, categoria);
+        this.valorAtual = valorInicial;
+    }
+    
+    @Override
+    public double[] getValores() {
+        if (this.valorAtual){
+            return new double[]{1.0};
+        }else{
+            return new double[]{0.0};
+        }
+        
+    }
+    
+    public void setValorAtual(boolean valorAtual) { this.valorAtual = valorAtual; }
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\SensorTemperatura.java  
+package model;
+public class SensorTemperatura extends Sensor {
+    private double valorAtual;
+    private String undMedida;
+
+    public SensorTemperatura(int id, String nome, String categoria, double valorInicial) {
+        super(id, nome, categoria);
+        this.valorAtual = valorInicial;
+        this.undMedida = "ºC";
+    }
+
+    @Override
+    public double[] getValores() {
+        return new double[] { this.valorAtual }; // Array de tamanho 1
+    }
+    
+    public void setValorAtual(double valorAtual) { this.valorAtual = valorAtual; }
+}  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\SensorVelocidade.java  
+package model;
+public class SensorVelocidade extends Sensor {
+    private double valorAtual;
+    private String undMedida;
+
+    public SensorVelocidade(int id, String nome, String categoria, double valorInicial) {
+        super(id, nome, categoria);
+        this.valorAtual = valorInicial;
+        this.undMedida = "km/h";
+    }
+    
+    @Override
+    public double[] getValores() {
+        return new double[] { this.valorAtual }; // Array de tamanho 1
+    }
+    
+    public double getValorAtual() { return valorAtual; }
+    public void setValorAtual(double valorAtual) { this.valorAtual = valorAtual; }
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Usuario.java  
+package model;
+ 
+public abstract class Usuario {
+    protected String nome;
+    protected String email;
+    protected String telefone;
+    
+    
+    Usuario(){
+        this.nome = "sem nome";
+        this.email = "@sem";
+        this.telefone = "";
+    }
+    
+    Usuario(String nome, String email, String telefone) {
+        this.nome = nome;
+        this.email = email;
+        this.telefone = telefone;
+    }
+    
+    public void setNome(String nome){
+        this.nome = nome;
+    }
+    
+    public String getNome(){
+        return this.nome;
+    }
+    
+    public void setEmail(String email){
+        this.nome = email;
+    }
+    
+    public String getEmail(){
+        return this.email;
+    }
+    
+    public void setTelefone(String telefone){
+        this.telefone = telefone;
+    }
+    
+    public String getTelefone(){
+        return this.telefone;
+    }
+    
+    
+    
+}
+  
+// Arquivo: c:\Users\NOG\Documents\Genesis\Git\telemetria_g9\telemetriaG9\model\Veiculo.java  
+package model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+public class Veiculo {
+    private int id;
+    private String tipoVeiculo;
+    private String identificador; 
+    private String tipoIdentificador;
+       
+    private List<Sensor> configuracao = new ArrayList<>();
+    
+    
+    
+    public Veiculo (int id, String identificador, String tipoIdentificador){
+        this.id = id;
+        this.identificador = identificador;
+        this.tipoIdentificador = tipoIdentificador;
+    }
+
+    public String getIdentificador() { 
+        return identificador; 
+    }
+
+        public String getTipoIdentificador() { 
+        return tipoIdentificador; 
+    }
+
+    public String getTipoVeiculo() { 
+        return tipoVeiculo;
+    }
+    // Métodos delegando a responsabilidade para o objeto localizacao
+    
+    public int getId() { 
+        return id; 
+    }
+    
+    public List<Sensor> getConfiguracao() {
+    return this.configuracao;
+    }
+    
+    public void adicionarSensor(Sensor s) { 
+    this.configuracao.add(s);
+    }
+}
