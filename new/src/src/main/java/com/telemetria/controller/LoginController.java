@@ -51,6 +51,8 @@ public class LoginController {
             return;
         }
 
+        java.util.List<String> todosUsuarios = RegistroLoginController.getListaUsuarios();
+        
         
 
         for (String linhaUsuario : todosUsuarios) {
@@ -60,7 +62,7 @@ public class LoginController {
             String cargoRegistrado = extrairValor(linhaUsuario, "Cargo:");
             
             if (usuarioDigitado.equals(loginRegistrado)) {
-                // Valida diretamente com a senha extraída da lista do usuário correspondente
+                
                 if (senhaDigitada.equals(senhaRegistrada)) {
                     cargoLogado = cargoRegistrado.toLowerCase();
                     RegistroLoginController.setNomeSalvo(nomeRegistrado);
@@ -104,12 +106,50 @@ private void abrirCadastro(ActionEvent event) {
         return "";
     }
 
-    private void irParaMenu(ActionEvent event) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("Menu.fxml"));
-        Stage stage = (Stage) entrarBotao.getScene().getWindow();
-        stage.setScene(new Scene(root));
-        stage.setTitle("Menu Principal");
-        stage.show();
+    private void irParaMenu(ActionEvent event) {
+        try {
+            String arquivoFXML = "Menu.fxml";
+            String tituloJanela = "Menu Principal";
+
+            if (cargoLogado != null) {
+                switch (cargoLogado.toLowerCase().trim()) {
+                    case "administrador" -> {
+                        arquivoFXML = "TelaX.fxml";
+                        tituloJanela = "Painel do Administrador";
+                    }
+                    case "cliente" -> {
+                        arquivoFXML = "TelaY.fxml";
+                        tituloJanela = "Painel do Cliente";
+                    }
+                    case "operador" -> {
+                        arquivoFXML = "TelaZ.fxml";
+                        tituloJanela = "Painel do Operador";
+                    }
+                }
+            }
+
+            java.net.URL fxmlUrl = getClass().getResource(arquivoFXML);
+            if (fxmlUrl == null) {
+                fxmlUrl = getClass().getResource(arquivoFXML.toLowerCase());
+            }
+
+            if (fxmlUrl == null) {
+                exibirErro("Erro de Arquivo", "O arquivo '" + arquivoFXML + "' não foi localizado.");
+                return;
+            }
+
+            FXMLLoader loader = new FXMLLoader(fxmlUrl);
+            Parent root = loader.load();
+
+            Stage stage = (Stage) entrarBotao.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle(tituloJanela);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            exibirErro("Falha no Módulo", "Não foi possível abrir a tela correspondente.");
+        }
     }
 
     private void exibirErro(String titulo, String mensagem) {
