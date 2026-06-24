@@ -1,43 +1,74 @@
- package com.telemetria.model;
- 
-import java.util.ArrayList;
-import java.util.List; 
+package com.telemetria.model;
 
-public class Monitoramento{
+import java.util.ArrayList;
+import java.util.List;
+
+public class Monitoramento {
     
-    private double limiteMaximo;
-    private double valorAtual;
     private String identificador;
-    private List<Sensor> configuracao = new ArrayList<>();
-    
     private Central central;
     private Veiculo veiculo;
+    private List<GatilhoSensor> regrasAtivas = new ArrayList<>();
     
-    
-    public void setLimiteMaximo(double limite){
-        this.limiteMaximo = limite;
-        }
-    
-    public boolean temErro(){
-        return this.valorAtual > this.limiteMaximo;
+    public Monitoramento(String identificador, Veiculo veiculo, Central central) {
+        this.identificador = identificador;
+        this.veiculo = veiculo;
+        this.central = central;
     }
     
-    
-    public void exibirStatusSensores() {
-        System.out.println("\t--- Status Atual do Veículo: " + this.identificador + " ---");
-        if(configuracao.isEmpty()) System.out.println("\t\tNenhum sensor instalado.");
-        for (Sensor s : configuracao) {
-            System.out.println("\t\tSensor: " + s.getId() + "-" + s.getNome() + " | Valor: " + s.getValor());
-        }
+    public void adicionarRegra(GatilhoSensor gatilho) {
+        this.regrasAtivas.add(gatilho);
     }
     
-    public void Sensor(String nomeS, double valorRecebido){
-        this.valorAtual = valorRecebido;
-    if(temErro()){
-        String mensagem = "Sensor " +nomeS +"acima do limite!";
+    public void processarNovaLeitura(Sensor sensorLido, double valorRecebido) {
+        sensorLido.setValorAtual(valorRecebido);
         
-        central.receberAlerta(mensagem, this.veiculo);
-        veiculo.exibirAviso(mensagem);
+        for (GatilhoSensor regra : regrasAtivas) {
+            if (regra.getSensor().equals(sensorLido)) {
+                
+                // Avalia o gatilho usando a lógica direta de limite máximo
+                if (avaliarGatilho(regra, valorRecebido)) {
+                    dispararAlarme(regra, valorRecebido);
+                }
+            }
         }
+    }
+    
+    public boolean avaliarGatilho(GatilhoSensor regra, double valorRecebido) {
+        return valorRecebido > regra.getLimiteMaximo();
+    }
+    
+    private void dispararAlarme(GatilhoSensor regraQuebrada, double valorDetectado) {
+        String nomeSensor = regraQuebrada.getSensor().getNome();
+        double limite = regraQuebrada.getLimiteMaximo();
+        
+        String mensagem = String.format("ALERTA CRÍTICO: Sensor [%s] detectou %.2f (Limite máximo de %.2f violado)", 
+                                        nomeSensor, valorDetectado, limite);
+        
+        if (central != null) {
+            central.receberAlerta(mensagem, this.veiculo);
+        }
+        if (veiculo != null) {
+            veiculo.exibirAviso(mensagem);
+        }
+    }
+    
+    public void exibirStatusRegras() {
+        System.out.println("\t--- Painel de Monitoramento do Veículo: " + this.identificador + " ---");
+        if(regrasAtivas.isEmpty()) {
+            System.out.println("\t\t⚠️ Nenhuma regra de segurança configurada.");
+        } else {
+            System.out.println("\t\tRegras ativas no sistema de bordo:");
+            for (GatilhoSensor r : regrasAtivas) {
+                System.out.println("\t\t- " + r.getSensor().getNome() + " | Alarme dispara se passar de: " + r.getLimiteMaximo());
+            }
+        }
+    }
+
+    public List<GatilhoSensor> getRegrasAtivas() { 
+        return regrasAtivas; 
+    }
+    public Veiculo getVeiculo() { 
+        return veiculo;
     }
 }

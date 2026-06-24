@@ -9,6 +9,10 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.telemetria.model.Sensor;
+import com.telemetria.db.ConexaoBanco;
+
+
 public class SensorDAO {
 
     public static boolean cadastrarSensorNoBanco(Sensor s, String identificadorVeiculo) {

@@ -1,22 +1,23 @@
 package com.telemetria.repository;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.telemetria.model.Cliente;
 import com.telemetria.model.Equipe;
-import com.telemetria.model.Gestor;
+import com.telemetria.model.Motorista;
 import com.telemetria.model.Operador;
 import com.telemetria.model.PerfilAcesso;
 import com.telemetria.model.Usuario;
+import com.telemetria.db.ConexaoBanco;
 
 
 public class UsuarioDAO {
+
     public static boolean cadastrarUsuario(String nome, String email, String login, String senha, PerfilAcesso Nivel) {
         String sql = "INSERT INTO usuario (nome, email, login, senha, nivel_acesso) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = ConexaoBanco.getConnection();
@@ -35,45 +36,45 @@ public class UsuarioDAO {
 
     public static Usuario autenticarUsuario(String loginOuEmail, String senha) {
         String sql = "SELECT id, nome, email, login, senha, nivel_acesso FROM usuario WHERE (login = ? OR email = ?) AND senha = ?";
-    
+        
         try (Connection conn = ConexaoBanco.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-                stmt.setString(1, loginOuEmail);
-                stmt.setString(2, loginOuEmail);
-                stmt.setString(3, senha);
+            stmt.setString(1, loginOuEmail);
+            stmt.setString(2, loginOuEmail);
+            stmt.setString(3, senha);
             
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
                     String nome = rs.getString("nome");
                     String emailDb = rs.getString("email");
                     String loginDb = rs.getString("login");
                     String senhaDb = rs.getString("senha");
                     int nivel = rs.getInt("nivel_acesso");
                 
-                    PerfilAcesso perfil = porNivel(nivel);
+                    PerfilAcesso perfil = PerfilAcesso.porNivel(nivel);
 
                     switch (perfil) {
-                    case ADMIN: 
-                        return new Equipe(loginDb, senhaDb, nome, emailDb, perfil);
-                    case OPERADOR: 
-                              return new Operador(loginDb, senhaDb, nome, emailDb, perfil); 
-                    case FROTISTA:
-                           return new Gestor(loginDb, senhaDb, nome, emailDb, perfil);
-                    default: 
-                           return new Cliente(loginDb, senhaDb, nome, emailDb, perfil);
-                        }
-                     }
+                        case ADMIN: 
+                            return new Equipe(loginDb, senhaDb, nome, emailDb, perfil);
+                        case OPERADOR: 
+                            return new Operador(loginDb, senhaDb, nome, emailDb, perfil); 
+                        case FROTISTA:
+                            return new Cliente(loginDb, senhaDb, nome, emailDb, perfil);
+                        case MOTORISTA:
+                            return new Motorista(loginDb, senhaDb, nome, emailDb, perfil);
+                        default:
+                            return null;
                     }
-                } catch (SQLException e) {
-                System.err.println("Erro na autenticação: " + e.getMessage());
+                }
             }
-            return null;
+        } catch (SQLException e) {
+            System.err.println("Erro na autenticação: " + e.getMessage());
         }
-    // Adicione dentro da classe CentralDAO
+        return null;
+    }
 
     public static boolean atualizarUsuario(Usuario autor, String emailAlvo, String novoNome, String novaSenha, PerfilAcesso nivel) {
-        
         boolean isAdmin = autor.getPerfil() == PerfilAcesso.ADMIN;
         boolean isProprioUsuario = autor.getEmail().equals(emailAlvo);
 
@@ -81,7 +82,6 @@ public class UsuarioDAO {
             System.out.println("ACESSO NEGADO: Você não tem permissão para alterar os dados de outra pessoa.");
             return false;
         }
-
 
         String sql = "UPDATE usuario SET nome = ?, senha = ?, nivel_acesso = ? WHERE email = ?";
 
@@ -111,7 +111,6 @@ public class UsuarioDAO {
     }
     
     public static boolean excluirUsuario(Usuario autor, String emailAlvo){
-        
         boolean isAdmin = autor.getPerfil() == PerfilAcesso.ADMIN;
         boolean isProprioUsuario = autor.getEmail().equals(emailAlvo);
         
@@ -123,43 +122,36 @@ public class UsuarioDAO {
         String sql = "DELETE FROM usuario WHERE email = ?";
         
         try (Connection conn = ConexaoBanco.getConnection();
-        PreparedStatement stmt = conn.prepareStatement(sql)){
+             PreparedStatement stmt = conn.prepareStatement(sql)){
             
             stmt.setString(1, emailAlvo);
-            
             int linhasAfetadas = stmt.executeUpdate();
             
             if (linhasAfetadas > 0){
-            
-            if (isAdmin & !isProprioUsuario){
-                salvarLog(autor, "ADMIN Excluiu a conta: " +emailAlvo);
-                System.out.println("Sua Conta do Usuario" + emailAlvo + "excluida pelo Administrador");
-            } else{
-                salvarLog(autor, "Excluiu a própria conta");
-                System.out.println("Sua Conta de Usuario foi excluída com sucesso");
-            }
-           
-            return true;
-            } else{
-                
-             System.out.println("Conta de usuário não encontrada");
-
+                if (isAdmin && !isProprioUsuario){
+                    salvarLog(autor, "ADMIN Excluiu a conta: " + emailAlvo);
+                    System.out.println("Sua Conta do Usuario " + emailAlvo + " excluida pelo Administrador");
+                } else {
+                    salvarLog(autor, "Excluiu a própria conta");
+                    System.out.println("Sua Conta de Usuario foi excluída com sucesso");
+                }
+                return true;
+            } else {
+                System.out.println("Conta de usuário não encontrada");
             }
             
-            }catch (SQLException e){
-            
-            System.err.println("Erro ao tentar excluir a conta: " +e.getMessage());
-
-            }
-            return false;
-                
+        } catch (SQLException e){
+            System.err.println("Erro ao tentar excluir a conta: " + e.getMessage());
         }
+        return false;
+    }
         
-        public static List<Usuario> listarUsuarios(PerfilAcesso perfilSolicitante) {
+    public static List<Usuario> listarUsuarios(PerfilAcesso perfilSolicitante) {
         List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM usuario";
         
-                if(perfilSolicitante == PerfilAcesso.OPERADOR){
+        // Operadores veem apenas motoristas
+        if(perfilSolicitante == PerfilAcesso.OPERADOR){
             sql += " WHERE nivel_acesso = 0"; 
         }
 
@@ -168,7 +160,6 @@ public class UsuarioDAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-            
                 String login = rs.getString("login");
                 String senha = rs.getString("senha");
                 String nome = rs.getString("nome");
@@ -176,13 +167,14 @@ public class UsuarioDAO {
                 int nivel = rs.getInt("nivel_acesso"); 
             
                 PerfilAcesso perfil = PerfilAcesso.porNivel(nivel);
-
             
                 Usuario u;
                 if (perfil == PerfilAcesso.ADMIN || perfil == PerfilAcesso.OPERADOR) {
                     u = new Equipe(login, senha, nome, email, perfil);
-                } else {
+                } else if (perfil == PerfilAcesso.FROTISTA) {
                     u = new Cliente(login, senha, nome, email, perfil);
+                } else {
+                    u = new Motorista(login, senha, nome, email, perfil);
                 }
             
                 usuarios.add(u);
@@ -193,3 +185,18 @@ public class UsuarioDAO {
         return usuarios;
     }
 
+    private static void salvarLog(Usuario autor, String acao) {
+        System.out.println("LOG [" + autor.getEmail() + "]: " + acao);
+        
+        String sql = "INSERT INTO logs (usuario_email, acao) VALUES (?, ?)";
+        
+        try (Connection conn = ConexaoBanco.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, autor.getEmail());
+            stmt.setString(2, acao);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Erro ao salvar log: " + e.getMessage());
+        }
+    }
+}

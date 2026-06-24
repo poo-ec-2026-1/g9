@@ -7,6 +7,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List; 
 
+import com.telemetria.model.Localizacao;
+import com.telemetria.model.PerfilAcesso;
+import com.telemetria.model.Sensor;
+import com.telemetria.model.Usuario;
+import com.telemetria.model.Veiculo;
+import com.telemetria.db.ConexaoBanco;
+
 public class GeralDAO {
 
     public List<Veiculo> listarFrotaCompleta() {

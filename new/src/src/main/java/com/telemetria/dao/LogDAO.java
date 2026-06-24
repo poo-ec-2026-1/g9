@@ -4,6 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import com.telemetria.model.Usuario;
+import com.telemetria.db.ConexaoBanco;
+
+
 public class LogDAO {
     
     public static void salvarLog(Usuario u, String descricao) {

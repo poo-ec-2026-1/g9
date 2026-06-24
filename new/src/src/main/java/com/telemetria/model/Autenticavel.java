@@ -1,5 +1,5 @@
- package com.telemetria.model;
-
+  package com.telemetria.model;
+ 
  public interface Autenticavel {
     
     int getQuantidadeFatores();

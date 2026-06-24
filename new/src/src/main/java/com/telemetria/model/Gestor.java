@@ -1,7 +1,12 @@
  package com.telemetria.model;
- 
+
 import java.util.List;
 import java.util.Scanner;
+
+import com.telemetria.repository.GeralDAO;
+import com.telemetria.repository.UsuarioDAO;
+import com.telemetria.db.ConexaoBanco;
+
 
 public class Gestor extends Usuario implements Autenticavel {
     

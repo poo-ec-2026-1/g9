@@ -6,6 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import com.telemetria.model.Sensor;
+import com.telemetria.model.Veiculo;
+import com.telemetria.db.ConexaoBanco;
+
+
 public class VeiculoDAO {
 
     public static boolean cadastrarVeiculoNoBanco(Veiculo v, String emailProprietario) {
