@@ -1,0 +1,10 @@
+#BlueJ class context
+comment0.target=MainApp
+comment1.params=primaryStage
+comment1.target=void\ start(javafx.stage.Stage)
+comment2.params=caminhoFxml\ titulo
+comment2.target=void\ trocarTela(java.lang.String,\ java.lang.String)
+comment2.text=\r\n\ M\u00E9todo\ utilit\u00E1rio\ para\ mudar\ de\ tela\ dinamicamente\ durante\ a\ execu\u00E7\u00E3o.\r\n\ Como\ \u00E9\ um\ m\u00E9todo\ static,\ usamos\ 'MainApp.class.getResource'\ para\ localizar\ os\ arquivos.\r\n
+comment3.params=args
+comment3.target=void\ main(java.lang.String[])
+numComments=4
