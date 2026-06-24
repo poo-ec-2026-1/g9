@@ -2,6 +2,9 @@
  
 import java.util.Scanner;
 
+import com.telemetria.repository.UsuarioDAO;
+
+
 public class Login {
         
     private Scanner scanner = new Scanner(System.in);
@@ -45,7 +48,7 @@ public class Login {
         String senha = scanner.nextLine();
 
         // Salva direto no Banco de Dados usando o DAO!
-        boolean sucesso = UsuarioDAO.cadastrarUsuario(nome, email, email, senha, PerfilAcesso.CLIENTE);
+        boolean sucesso = UsuarioDAO.cadastrarUsuario(nome, email, email, senha, PerfilAcesso.FROTISTA);
         
         if (sucesso) {
             System.out.println("\nUsuário " + nome + " cadastrado com sucesso no banco de dados!");

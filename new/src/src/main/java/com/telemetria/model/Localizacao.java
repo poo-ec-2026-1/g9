@@ -5,18 +5,23 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 
-//GPS básico, leitura de localização por meio da lat e long, junto de uma leitura de velocidade.
+import com.telemetria.db.ConexaoBanco;
+
+
+// GPS básico, leitura de localização por meio da lat e long, junto de uma leitura de velocidade.
 public record Localizacao(
     double latitude,
     double longitude,
     double velocidadeKmh,
-    Instant timestamp//para gravar a hora e a data.
+    Instant timestamp // para gravar a hora e a data.
 ) {
     public String toGoogleMapsUrl() {
-        return "https://www.google.com/maps/search/?api=1&query=" + latitude + "," + longitude;
+        // Correção do formato da URL do Google Maps
+        return "https://www.google.com/maps?q=" + latitude + "," + longitude;
     }
 }
-//Conexão do GPS com o banco de dados
+
+// Conexão do GPS com o banco de dados
 class LocalizacaoDAO {
     
     public void salvarLocalizacao(long dispositivoId, Localizacao loc) {
@@ -40,4 +45,4 @@ class LocalizacaoDAO {
             System.err.println("Erro ao persistir localização: " + e.getMessage());
         }
     }
-}
+} 

@@ -7,6 +7,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.telemetria.model.Cliente;
+import com.telemetria.model.Equipe;
+import com.telemetria.model.Gestor;
+import com.telemetria.model.Operador;
+import com.telemetria.model.PerfilAcesso;
+import com.telemetria.model.Usuario;
+import com.telemetria.db.ConexaoBanco;
+
 
 public class UsuarioDAO {
 

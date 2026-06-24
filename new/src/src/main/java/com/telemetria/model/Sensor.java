@@ -1,5 +1,7 @@
  package com.telemetria.model;
  
+import java.util.Random;
+
 public class Sensor {
     private static int idSensor = 0;
     private int id;
@@ -42,6 +44,24 @@ public class Sensor {
         }
     }
     
+    public void simularLeituraAleatoria() {
+        Random random = new Random();
+        
+        if (this.tipoDado.equals("1/0")) {
+            // Sorteia exatamente 0 ou 1 para sensores de porta, luzes, etc.
+            double valorSorteado = random.nextInt(2);
+            this.setValor(valorSorteado); 
+        } else {
+            //Gera valores aleatorios para teste de sensor. 
+            double tetoSorteio = (this.limiteMaximo > 0) ? (this.limiteMaximo * 1.2) : 100.0;
+            
+            double valorSorteado = random.nextDouble() * tetoSorteio;
+        
+            valorSorteado = Math.round(valorSorteado * 100.0) / 100.0;
+            
+            this.setValor(valorSorteado);
+        }
+    }
     // Getters e Setters
     public void setId() {
         this.id = idSensor;

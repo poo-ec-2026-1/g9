@@ -27,7 +27,11 @@ public class Veiculo {
         this.tipoIdentificador = tipoIdentificador;
         this.localizacao = loc;
     }
-
+    
+    public Veiculo(){
+        
+    }
+    
     public String getIdentificador() { 
         return identificador; 
     }
@@ -71,6 +75,14 @@ public class Veiculo {
     
     public void adicionarSensor(Sensor s) { 
     this.configuracao.add(s);
+    }
+    
+    public void setTipoVeiculo() { 
+        this.tipoVeiculo = tipoVeiculo;
+    }
+    
+    public void setIdentificador(String identificador) {
+        this.identificador = identificador;
     }
     
     public void exibirStatusSensores() {

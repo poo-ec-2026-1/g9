@@ -1,6 +1,5 @@
 package com.telemetria.repository;
 
-import com.telemetria.model.Sensor;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,6 +8,10 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.telemetria.model.Sensor;
+import com.telemetria.db.ConexaoBanco;
+
 
 public class SensorDAO {
 
@@ -35,7 +38,7 @@ public class SensorDAO {
             System.err.println("Erro ao cadastrar sensor no banco: " + e.getMessage());
             return false;
         }
-    } // Fechamento correto do método cadastrar
+    }
 
     // Lista sensores de um veículo específico para que o Operador saiba qual ID editar
     public static void listarSensoresPorVeiculo(String placa) {
@@ -61,7 +64,8 @@ public class SensorDAO {
 
     // Método para atualização completa de todos os campos da tabela sensores
     public static boolean atualizarSensorCompleto(int id, String categoria, String nome, String undMedida, String tipoDado, double limiteMaximo) {
-        String sql = "UPDATE sensores SET categoria = ?, nome = ?, und_medida = ?, tipo_dado = ?,  limite_maximo = ?, atualizado_em = NOW() WHERE id = ?";
+        
+        String sql = "UPDATE sensores SET categoria = ?, nome = ?, und_medida = ?, tipo_dado = ?,  limite_maximo = ?, atualizado_em = CURRENT_TIMESTAMP WHERE id = ?";
         try (Connection conn = ConexaoBanco.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, categoria);
@@ -88,4 +92,34 @@ public class SensorDAO {
         }
     }
 
-} 
+    // Novo método: Retorna os objetos Sensor do banco de dados
+    public static List<Sensor> buscarSensoresPorVeiculo(String identificadorVeiculo) {
+        List<Sensor> lista = new ArrayList<>();
+        String sql = "SELECT s.categoria, s.nome, s.und_medida, s.tipo_dado, s.valor_atual, s.limite_maximo "
+                   + "FROM sensores s JOIN veiculos v ON s.veiculo_id = v.id "
+                   + "WHERE v.identificador = ?";
+                   
+        try (Connection conn = ConexaoBanco.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             
+            stmt.setString(1, identificadorVeiculo);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                // Cria o objeto usando o seu construtor
+                Sensor s = new Sensor(
+                    rs.getString("nome"), 
+                    rs.getString("und_medida"), 
+                    rs.getString("tipo_dado"), 
+                    rs.getDouble("valor_atual"), 
+                    rs.getDouble("limite_maximo")
+                );
+                s.setCategoria(rs.getString("categoria"));
+                lista.add(s);
+            }
+        } catch (SQLException e) {
+            System.err.println("Erro ao buscar sensores: " + e.getMessage());
+        }
+        return lista;
+    }
+}

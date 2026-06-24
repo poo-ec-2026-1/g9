@@ -1,4 +1,3 @@
-//o package serve para buscar o código na pasta dele e evitar conflitos de nomes entre classes.
 package com.telemetria.repository;
 
 //Import das pastas onde estão as classes de modelo para que o DAO possa criar os objetos e retornar as listas completas
@@ -14,6 +13,7 @@ import com.telemetria.model.PerfilAcesso;
 import com.telemetria.model.Sensor;
 import com.telemetria.model.Usuario;
 import com.telemetria.model.Veiculo;
+import com.telemetria.db.ConexaoBanco;
 
 public class GeralDAO {
 
@@ -28,7 +28,7 @@ public class GeralDAO {
 
             while (rsV.next()) {
                 int id = rsV.getInt("id");
-                Localizacao loc = null; // Caso tenha lógica de localização, implementar aqui
+                Localizacao loc = null;
                 
                 Veiculo v = new Veiculo(
                     id, 
@@ -123,6 +123,47 @@ public class GeralDAO {
         }
     }
 
+    public static void verHistoricoVeiculo(String placa) {
+        // Query que busca o motorista E as últimas 5 posições do carro
+        String sql = """
+            SELECT u.nome AS motorista, l.latitude, l.longitude, l.data_hora 
+            FROM veiculos v
+            LEFT JOIN usuario u ON v.motorista_id = u.id
+            LEFT JOIN localizacao l ON v.id = l.dispositivo_id
+            WHERE v.identificador = ?
+            ORDER BY l.data_hora DESC LIMIT 5
+        """;
+
+        try (Connection conn = ConexaoBanco.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, placa);
+            try (ResultSet rs = stmt.executeQuery()) {
+                System.out.println("\n--- DETALHES DO VEÍCULO [" + placa + "] ---");
+                
+                boolean primeiraLinha = true;
+                while (rs.next()) {
+                    if (primeiraLinha) {
+                        String motorista = rs.getString("motorista");
+                        System.out.println("👤 Motorista atual: " + (motorista != null ? motorista : "Nenhum vinculado"));
+                        System.out.println("📍 Últimas localizações:");
+                        primeiraLinha = false;
+                    }
+                    
+                    String lat = rs.getString("latitude");
+                    String lon = rs.getString("longitude");
+                    if (lat != null) {
+                        System.out.println("   -> " + rs.getString("data_hora") + " | Coords: " + lat + ", " + lon);
+                    }
+                }
+                if (primeiraLinha) System.out.println("   Sem histórico de localização registrado.");
+            }
+        } catch (SQLException e) {
+            System.out.println("Erro ao buscar histórico: " + e.getMessage());
+        }
+    }
+    
+    //Método para que o usuário autorizado possa ver frotas, criar usuários operadores e possa alterar veículos.
     public static void executarAcao(Usuario autor, String tipoAcao, Object alvo) {
         if (!autor.podeExecutar(tipoAcao)) {
             System.out.println("ACESSO NEGADO: " + autor.getEmail() + " não tem permissão para " + tipoAcao);
@@ -139,7 +180,6 @@ public class GeralDAO {
                 }
                 break;
             case "VER_FROTA":
-                // Lógica para ver frota
                 break;
         }
     }
@@ -156,5 +196,31 @@ public class GeralDAO {
     // Método auxiliar para evitar erro de compilação em executarAcao
     private static void salvarLog(Usuario autor, String mensagem) {
         System.out.println("LOG: " + autor.getNome() + " - " + mensagem);
+    }
+    
+    public static void lerLogsBanco() {
+        String sql = "SELECT * FROM logs ORDER BY data_hora DESC LIMIT 50";
+        
+        try (Connection conn = ConexaoBanco.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+             
+            System.out.println("\n--- ÚLTIMOS LOGS DO SISTEMA ---");
+            boolean temLog = false;
+            
+            while(rs.next()) {
+                temLog = true;
+                System.out.println(rs.getTimestamp("data_hora") + " | " + 
+                                   rs.getString("autor") + " | " + 
+                                   rs.getString("mensagem"));
+            }
+            
+            if (!temLog) System.out.println("Nenhum log registrado ainda.");
+            System.out.println("-------------------------------");
+             
+        } catch (SQLException e) {
+            // Se a tabela logs não existir, avisa sem travar o sistema
+            System.out.println("Aviso: Tabela de logs indisponível ou vazia no banco de dados.");
+        }
     }
 }

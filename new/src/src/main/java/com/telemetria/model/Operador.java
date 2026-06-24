@@ -4,6 +4,12 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.telemetria.repository.GeralDAO;
+import com.telemetria.repository.SensorDAO;
+import com.telemetria.repository.UsuarioDAO;
+import com.telemetria.repository.VeiculoDAO;
+
+
 public class Operador extends Usuario implements Autenticavel {
     
     private List<Veiculo> frotaLocal = new ArrayList<>();
@@ -153,8 +159,7 @@ public class Operador extends Usuario implements Autenticavel {
         System.out.print("Nova Senha: ");
         String novaSenha = leitor.nextLine();
     
-        // Como o operador só gerencia clientes, o nível permanece CLIENTE (0)
-        boolean sucesso = UsuarioDAO.atualizarUsuario(this, emailAlvo, novoNome, novaSenha, PerfilAcesso.CLIENTE);
+        boolean sucesso = UsuarioDAO.atualizarUsuario(this, emailAlvo, novoNome, novaSenha, PerfilAcesso.FROTISTA);
         
         if (sucesso) System.out.println("✅ Dados atualizados com sucesso!");
         else System.out.println("❌ Erro ao atualizar ou permissão negada.");
@@ -162,7 +167,6 @@ public class Operador extends Usuario implements Autenticavel {
     
     private void editarDadosVeiculo(Scanner leitor, String emailAlvo) {
         System.out.println("\n--- Editando Veículo do Cliente ---");
-        // Primeiro listamos para o operador saber o que existe
         GeralDAO.listarVeiculosPorDono(emailAlvo);
     
         System.out.print("\nPlaca Atual do veículo: ");
@@ -289,6 +293,5 @@ public class Operador extends Usuario implements Autenticavel {
 
 
     private void removerUsuario(Scanner leitor) {
-        // Implementação chamando CentralDAO.excluirUsuario
     }
 }

@@ -1,7 +1,7 @@
- package com.telemetria.model;
+package com.telemetria.model;
  
 public enum PerfilAcesso {
-    CLIENTE(0, "Usuário Cliente"),
+    MOTORISTA(0, "Motorista"),
     FROTISTA(1, "Gestor de Frota"),
     OPERADOR(2, "Operador de Telemetria"),
     ADMIN(3, "Administrador do Sistema");
@@ -32,46 +32,42 @@ public enum PerfilAcesso {
         }
         throw new IllegalArgumentException("Nível de acesso inválido: " + nivel);
     }
-   
+    
     public boolean temPermissao(String acao) {
         switch (acao) {
+            // Ações exclusivas da Central de Controle (Equipe)
             case "EXCLUIR_USUARIO":
-                return this == ADMIN || this == OPERADOR;
-            
             case "VER_USUARIO":
-                return this == ADMIN || this == OPERADOR;    
-                
-            case "CRIAR_USUARIO":
-                return this == ADMIN || this == OPERADOR;
-
-                
             case "EDITAR_USUARIO":
+            case "VER_SENSOR":
+            case "ADICIONAR_SENSOR":
+            case "EXCLUIR_SENSOR":
                 return this == ADMIN || this == OPERADOR;
+                
+            // Ações críticas de Auditoria
+            case "VER_LOGS":
+            case "LIMPAR_LOGS":
+                return this == ADMIN;
 
-            
+            // Frotista (Nível 1) agora também pode criar usuários (Motoristas) e gerenciar carros
+            case "CRIAR_USUARIO":
             case "MANTER_VEICULO":
                 return this == ADMIN || this == OPERADOR || this == FROTISTA;
             
-            case "VER_SENSOR":
-                return this == ADMIN || this == OPERADOR;
-                
-            case "ADICIONAR_SENSOR":
-                return this == ADMIN || this == OPERADOR;
-            
-            case "EXCLUIR_SENSOR":
-                return this == ADMIN || this == OPERADOR;
-            
+            // Leitura de dados visuais (Motorista vê os próprios, os demais veem tudo)
             case "VER_FROTA":
             case "VER_DADOS_TELEMETRIA":
-                return this.nivel >= 1; 
+                return this.nivel >= 0; 
                 
-            case "VER_LOGS":
-                return this == ADMIN;
-
-            case "LIMPAR_LOGS":
-                return this == ADMIN;
+            // Ações exclusivas do Gestor da Frota (Nível 1)
+            case "MENSAGEM_CENTRAL":
+                return this == FROTISTA;
                 
-           
+            // Ações exclusivas do aplicativo de bordo do Motorista (Nível 0)
+            case "INICIAR_VIAGEM":
+            case "CALCULAR_ROTA":
+                return this == MOTORISTA || this == FROTISTA; 
+            
             default:
                 return false;
         }
