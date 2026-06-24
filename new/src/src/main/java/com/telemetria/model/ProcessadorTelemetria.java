@@ -1,5 +1,6 @@
 package com.telemetria.model;
 
+import com.telemetria.repository.GeralDAO;
 import java.time.Instant;
 
 public class ProcessadorTelemetria {
@@ -24,7 +25,7 @@ public class ProcessadorTelemetria {
         double latitude = coordenadas[0];
         double longitude = coordenadas[1];
 
-        // 3. Define a velocidade (aqui você pode integrar um sensor de velocidade no futuro)
+        // 3. Define a velocidade
         double velocidadeSimulada = 60.0; 
 
         // 4. Empacota os dados no record Localizacao com o Timestamp exato deste momento
@@ -36,6 +37,6 @@ public class ProcessadorTelemetria {
         );
 
         // 5. Envia para o banco de dados
-        dao.salvarLocalizacao(dispositivoId, locAtual);
+        GeralDAO.salvarLocalizacao(dispositivoId, locAtual);
     }
 }

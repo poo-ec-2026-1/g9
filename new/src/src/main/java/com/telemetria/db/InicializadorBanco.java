@@ -26,10 +26,10 @@ public class InicializadorBanco {
                 tipo_identificador TEXT,
                 tipo_veiculo TEXT,
                 ativo INTEGER DEFAULT 1,
+                status_viagem TEXT DEFAULT 'PARADO',
                 
-                -- Cria o relacionamento: um veículo pertence a um gestor
+                
                 FOREIGN KEY (usuario_id) REFERENCES usuario(id) ON DELETE CASCADE,
-                -- E pode ser dirigido por um motorista
                 FOREIGN KEY (motorista_id) REFERENCES usuario(id) ON DELETE SET NULL
             );
 

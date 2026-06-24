@@ -1,17 +1,17 @@
  package com.telemetria.model;
 
-import java.util.List;
-import java.util.Scanner;
+import com.telemetria.db.ConexaoBanco;
+import com.telemetria.repository.GeralDAO;
+import com.telemetria.repository.LogDAO;
+import com.telemetria.repository.SensorDAO;
+import com.telemetria.repository.UsuarioDAO;
+import com.telemetria.repository.VeiculoDAO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.telemetria.db.ConexaoBanco;
-import com.telemetria.repository.GeralDAO;
-import com.telemetria.repository.SensorDAO;
-import com.telemetria.repository.UsuarioDAO;
-import com.telemetria.repository.VeiculoDAO;
+import java.util.List;
+import java.util.Scanner;
 
 public class Equipe extends Usuario implements Autenticavel {
     
@@ -99,7 +99,7 @@ public class Equipe extends Usuario implements Autenticavel {
             
             case 7:
                 if (podeExecutar("VER_LOGS")) {
-                    GeralDAO.lerLogsBanco(); 
+                    LogDAO.lerLogsBanco(); 
                 }
                 break;
                 

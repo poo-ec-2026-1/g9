@@ -1,19 +1,19 @@
 package com.telemetria.repository;
 
 //Import das pastas onde estão as classes de modelo para que o DAO possa criar os objetos e retornar as listas completas
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List; // Certifique-se que o caminho está correto
-
+import com.telemetria.db.ConexaoBanco;
 import com.telemetria.model.Localizacao;
 import com.telemetria.model.PerfilAcesso;
 import com.telemetria.model.Sensor;
 import com.telemetria.model.Usuario;
 import com.telemetria.model.Veiculo;
-import com.telemetria.db.ConexaoBanco;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GeralDAO {
 
@@ -197,30 +197,26 @@ public class GeralDAO {
     private static void salvarLog(Usuario autor, String mensagem) {
         System.out.println("LOG: " + autor.getNome() + " - " + mensagem);
     }
-    
-    public static void lerLogsBanco() {
-        String sql = "SELECT * FROM logs ORDER BY data_hora DESC LIMIT 50";
+
+    public static void salvarLocalizacao(long dispositivoId, Localizacao locAtual) {
+        String sql = "INSERT INTO localizacao (dispositivo_id, latitude, longitude, velocidade, data_hora) " +
+                     "VALUES (?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConexaoBanco.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-             
-            System.out.println("\n--- ÚLTIMOS LOGS DO SISTEMA ---");
-            boolean temLog = false;
+        try (Connection conn = ConexaoBanco.getConnection();    
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            while(rs.next()) {
-                temLog = true;
-                System.out.println(rs.getTimestamp("data_hora") + " | " + 
-                                   rs.getString("autor") + " | " + 
-                                   rs.getString("mensagem"));
-            }
+            stmt.setLong(1, dispositivoId);
+            stmt.setDouble(2, locAtual.latitude());
+            stmt.setDouble(3, locAtual.longitude());
+            stmt.setDouble(4, locAtual.velocidadeKmh());
             
-            if (!temLog) System.out.println("Nenhum log registrado ainda.");
-            System.out.println("-------------------------------");
-             
+            stmt.setTimestamp(5, Timestamp.from(locAtual.timestamp()));
+            
+            stmt.executeUpdate();
+            System.out.println("✅ Localização registrada no banco (Lat: " + locAtual.latitude() + ", Lon: " + locAtual.longitude() + ")");
+            
         } catch (SQLException e) {
-            // Se a tabela logs não existir, avisa sem travar o sistema
-            System.out.println("Aviso: Tabela de logs indisponível ou vazia no banco de dados.");
+            System.err.println("❌ Erro ao persistir a localização no banco: " + e.getMessage());
         }
     }
 }
