@@ -1,15 +1,12 @@
 package com.telemetria.model;
 
-import java.util.ArrayList;
-import java.util.List; 
+import com.telemetria.db.ConexaoBanco; 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.telemetria.db.ConexaoBanco;
-import com.telemetria.model.Veiculo;
-
+import java.util.ArrayList;
+import java.util.List;
 
 public class Central {
     
@@ -21,9 +18,6 @@ public class Central {
         this.veiculosEmEmergencia = new ArrayList<>();
     }
         
-    // =========================================================================
-    // GERENCIAMENTO DE EMERGÊNCIAS
-    // =========================================================================
 
     public void receberAlerta(String msg, Veiculo v) {
         System.out.println("\n🚨 ALERTA RECEBIDO NA CENTRAL [" + nomeUnidade + "]: " + msg);
@@ -52,20 +46,10 @@ public class Central {
         }
     }
 
-    // =========================================================================
-    // COMUNICAÇÃO COM FROTISTAS
-    // =========================================================================
-
-    /**
-     * Acessa o banco de dados e busca todas as mensagens enviadas pelos Frotistas (Clientes).
-     * Funciona como uma "Caixa de Entrada" para a equipe de Operadores/Admin.
-     */
     public void lerMensagensFrotistas() {
         System.out.println("\n--- 📥 CAIXA DE ENTRADA: MENSAGENS DE FROTISTAS ---");
-        
-        // Busca apenas os logs que começam com a tag que definimos na classe Cliente
-        String sql = "SELECT usuario_email, acao, data_hora FROM logs " +
-                     "WHERE acao LIKE '[MENSAGEM GESTOR]%' ORDER BY data_hora DESC";
+
+       String sql = "SELECT remetente_email, conteudo, data_hora FROM mensagens ORDER BY data_hora DESC";
                      
         try (Connection conn = ConexaoBanco.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -79,7 +63,6 @@ public class Central {
                 String mensagemCompleta = rs.getString("acao");
                 String dataHora = rs.getString("data_hora");
                 
-                // Limpa a tag visual "[MENSAGEM GESTOR] " para a leitura ficar mais elegante
                 String mensagemLimpa = mensagemCompleta.replace("[MENSAGEM GESTOR] ", "");
                 
                 System.out.println("📅 " + dataHora);

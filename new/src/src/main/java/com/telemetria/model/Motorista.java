@@ -1,28 +1,22 @@
 package com.telemetria.model;
 
-import java.util.Scanner;
+import com.telemetria.db.ConexaoBanco;
+import com.telemetria.repository.GeralDAO;
+import com.telemetria.repository.SensorDAO;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.List;
 import java.util.ArrayList;
-
-import com.telemetria.db.ConexaoBanco;
-import com.telemetria.repository.GeralDAO;
-import com.telemetria.repository.SensorDAO;
-import com.telemetria.model.GatilhoSensor;
-import com.telemetria.model.Monitoramento;
-import com.telemetria.model.Sensor;
-import com.telemetria.model.Localizacao;
+import java.util.List;
+import java.util.Scanner;
 
 
-// Renomeado de Cliente para Motorista para refletir o papel no sistema
+
 public class Motorista extends Usuario implements Autenticavel {
     
     public Motorista(String login, String senha, String nome, String email, PerfilAcesso perfil) {
-        // Trava o perfil de segurança como OPERADOR ou MOTORISTA (dependendo do seu Enum)
         super(login, senha, nome, email, perfil); 
     }
 
@@ -65,7 +59,7 @@ public class Motorista extends Usuario implements Autenticavel {
         } while (opcao != 0);
     }
     
-    // --- NOVA FUNÇÃO: CÁLCULO DE ROTA ---
+        //Cálculo de rota para o motorista, simulando uma rota e estimando tempo e distância.
     private void calcularRota(Scanner leitor) {
         System.out.print("\nDigite a rua ou endereço de destino: ");
         String destino = leitor.nextLine();
@@ -93,9 +87,9 @@ public class Motorista extends Usuario implements Autenticavel {
         } else {
             System.out.println("Rota cancelada.");
         }
-    }    // ------------------------------------
+    }    
 
-    // --- NOVA FUNÇÃO: GERADOR E TRANSMISSOR DE GPS ---
+    // Função para iniciar a viagem, simulando o envio de dados de GPS e telemetria para o banco de dados.
    private void iniciarViagem(Scanner leitor) {
         System.out.print("\nDigite a Placa/Serial do veículo que você está conduzindo: ");
         String placa = leitor.nextLine();
@@ -110,16 +104,15 @@ public class Motorista extends Usuario implements Autenticavel {
         List<Sensor> sensoresDoCarro = SensorDAO.buscarSensoresPorVeiculo(placa);
         
         // 2. Configura o Monitoramento
-        Veiculo veiculoRodando = new Veiculo(); // Objeto virtual apenas para amarrar os dados
+        Veiculo veiculoRodando = new Veiculo(); 
         veiculoRodando.setIdentificador(placa);
         Monitoramento monitor = new Monitoramento(placa, veiculoRodando, null);
         
-        // Lista para guardar os simuladores criados para podermos desligá-los no final
+        // Gera uma lista de simuladores para gerar dadods durante a viagem, eles desligam no final da viagem
         List<SimuladorSensor> simuladoresAtivos = new ArrayList<>();
         
         // 3. Para cada sensor, cria uma regra e inicia uma Thread separada
         for (Sensor s : sensoresDoCarro) {
-            // Se o limite máximo for 0, usamos um limite alto fictício. Se houver limite, usamos ele.
             double limiteSeguranca = (s.getLimiteMaximo() > 0) ? s.getLimiteMaximo() : 999.0;
             monitor.adicionarRegra(new GatilhoSensor(s, 0, limiteSeguranca));
             
@@ -127,7 +120,7 @@ public class Motorista extends Usuario implements Autenticavel {
             simuladoresAtivos.add(sim);
             
             Thread t = new Thread(sim);
-            t.start(); // Dá a partida no sensor (roda solto em background)
+            t.start(); 
         }
 
         System.out.println("\nIniciando transmissão de GPS (Simulando 5 leituras)...");

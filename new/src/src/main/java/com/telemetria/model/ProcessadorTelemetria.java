@@ -8,7 +8,6 @@ public class ProcessadorTelemetria {
     private LocalizacaoDAO dao;
     private long dispositivoId;
 
-    // Injeção de dependência: o processador recebe o sensor e o DAO prontos
     public ProcessadorTelemetria(long dispositivoId, SensorGeografico sensor, LocalizacaoDAO dao) {
         this.dispositivoId = dispositivoId;
         this.sensor = sensor;

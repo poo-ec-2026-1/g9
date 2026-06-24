@@ -1,11 +1,10 @@
  package com.telemetria.model;
  
-import java.time.Instant;
+import com.telemetria.db.ConexaoBanco;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
-
-import com.telemetria.db.ConexaoBanco;
+import java.time.Instant;
 
 
 // GPS básico, leitura de localização por meio da lat e long, junto de uma leitura de velocidade.
@@ -16,7 +15,7 @@ public record Localizacao(
     Instant timestamp // para gravar a hora e a data.
 ) {
     public String toGoogleMapsUrl() {
-        // Correção do formato da URL do Google Maps
+        // utiliza a latitude e longitude para criar um link do Google Maps
         return "https://www.google.com/maps?q=" + latitude + "," + longitude;
     }
 }

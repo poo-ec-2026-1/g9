@@ -1,8 +1,7 @@
  package com.telemetria.model;
  
-import java.util.Scanner;
-
 import com.telemetria.repository.UsuarioDAO;
+import java.util.Scanner;
 
 
 public class Login {
@@ -66,7 +65,6 @@ public class Login {
         System.out.print("Senha: ");
         String senhaDigitada = scanner.nextLine();
         
-        // Busca o usuário direto no Banco de Dados!
         Usuario usuarioLogado = UsuarioDAO.autenticarUsuario(loginDigitado, senhaDigitada);
         
         if (usuarioLogado != null) {

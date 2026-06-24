@@ -1,6 +1,5 @@
 package com.telemetria.model;
 
-import com.telemetria.model.PerfilAcesso;
 
 public class Instalador extends Usuario implements Autenticavel {
     

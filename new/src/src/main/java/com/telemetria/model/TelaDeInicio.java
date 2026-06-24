@@ -1,10 +1,6 @@
  package com.telemetria.model;
 
-import com.telemetria.repository.GeralDAO;
-import com.telemetria.model.SensorGeografico;
 import com.telemetria.db.InicializadorBanco;
-import com.telemetria.model.Login;
-
 
 public class TelaDeInicio {
         public TelaDeInicio(){

@@ -9,7 +9,7 @@ public enum PerfilAcesso {
     private final int nivel;
     private final String descricao;
 
-    // Construtor privado (padrão de Enums)
+
     private PerfilAcesso(int nivel, String descricao) {
         this.nivel = nivel;
         this.descricao = descricao;
@@ -35,7 +35,7 @@ public enum PerfilAcesso {
     
     public boolean temPermissao(String acao) {
         switch (acao) {
-            // Ações exclusivas da Central de Controle (Equipe)
+            // Ações exclusivas da Central de Controle 
             case "EXCLUIR_USUARIO":
             case "VER_USUARIO":
             case "EDITAR_USUARIO":
@@ -49,21 +49,21 @@ public enum PerfilAcesso {
             case "LIMPAR_LOGS":
                 return this == ADMIN;
 
-            // Frotista (Nível 1) agora também pode criar usuários (Motoristas) e gerenciar carros
+            
             case "CRIAR_USUARIO":
             case "MANTER_VEICULO":
                 return this == ADMIN || this == OPERADOR || this == FROTISTA;
             
-            // Leitura de dados visuais (Motorista vê os próprios, os demais veem tudo)
+        
             case "VER_FROTA":
             case "VER_DADOS_TELEMETRIA":
                 return this.nivel >= 0; 
                 
-            // Ações exclusivas do Gestor da Frota (Nível 1)
+            // Ações exclusivas do FROTISTA
             case "MENSAGEM_CENTRAL":
                 return this == FROTISTA;
                 
-            // Ações exclusivas do aplicativo de bordo do Motorista (Nível 0)
+            // Ações exclusivas do aplicativo de bordo do Motorista
             case "INICIAR_VIAGEM":
             case "CALCULAR_ROTA":
                 return this == MOTORISTA || this == FROTISTA; 

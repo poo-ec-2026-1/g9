@@ -1,13 +1,12 @@
  package com.telemetria.model;
 
-import java.util.Scanner;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.telemetria.repository.GeralDAO;
 import com.telemetria.repository.SensorDAO;
 import com.telemetria.repository.UsuarioDAO;
 import com.telemetria.repository.VeiculoDAO;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 
 public class Operador extends Usuario implements Autenticavel {
@@ -19,7 +18,6 @@ public class Operador extends Usuario implements Autenticavel {
         super(login, senha, nome, email, PerfilAcesso.OPERADOR);
     }
 
-    // --- MÉTODOS DE AUTENTICAÇÃO ---
 
     @Override
     public int getQuantidadeFatores() { 
@@ -41,7 +39,6 @@ public class Operador extends Usuario implements Autenticavel {
         return biometria.equals("Digital ok");
     }
 
-    // --- INTERFACE DE SISTEMA ---
 
     @Override
     public void acessarSistema() {

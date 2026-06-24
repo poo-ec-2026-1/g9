@@ -1,14 +1,13 @@
 package com.telemetria.repository;
 
+import com.telemetria.db.ConexaoBanco;
+import com.telemetria.model.Sensor;
+import com.telemetria.model.Veiculo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import com.telemetria.model.Sensor;
-import com.telemetria.model.Veiculo;
-import com.telemetria.db.ConexaoBanco;
 
 public class VeiculoDAO {
 
@@ -84,7 +83,7 @@ public class VeiculoDAO {
                 }
             }
 
-            // Confirma a transação (salva tudo de vez)
+            // Confirma a transação
             conn.commit();
             return true;
 

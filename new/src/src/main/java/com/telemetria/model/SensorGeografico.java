@@ -9,13 +9,11 @@ public class SensorGeografico extends Sensor {
     
     // Construtor 1: Inicializa com as coordenadas padrão
     public SensorGeografico(String nome) {
-        // Chama o construtor compatível de Sensor: categoria, nome, tipoDado, undMedida
         super("Telemetria", nome, "Coordenadas", "Graus Decimais"); 
         
-        // Gera e atribui o ID usando a lógica da classe mãe
         this.setId(); 
         
-        // Coordenadas válidas iniciais
+        // Coordenadas iniciais para fim de exemplo 
         this.latitude = -16.67744721562849;
         this.longitude = -49.24250895082047;
     }
@@ -46,11 +44,10 @@ public class SensorGeografico extends Sensor {
         this.latitude += deltaLat;
         this.longitude += deltaLon;
         
-        // Opcional: Salva a última distância percorrida no valorAtual da classe mãe
+        // Salva a última distância percorrida no valorAtual da classe mãe
         this.setValorAtual(distanciaMetros);
     }
     
-    // Removido o @Override, agora este é um método exclusivo do SensorGeografico
     public double[] getValores() {
         return new double[] { this.latitude, this.longitude };
     }

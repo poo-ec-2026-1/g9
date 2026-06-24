@@ -128,24 +128,21 @@ public class Equipe extends Usuario implements Autenticavel {
     private void adicionarSensorAoVeiculo(Scanner leitor) {
         System.out.println("\n--- CONFIGURAÇÃO DE SENSOR ---");
         
-        // 1. Identifica o usuário
         System.out.print("Digite o e-mail do cliente (proprietário): ");
         String emailDono = leitor.nextLine();
-        
-        // 2. Exibe os veículos vinculados a esse usuário
+
         System.out.println("\nBuscando frota do cliente...");
         GeralDAO.listarVeiculosPorDono(emailDono);
         
-        // 3. Seleção do veículo com opção de cancelamento
+
         System.out.print("\nDigite o Identificador do Veículo escolhido (Placa/Serial) ou '0' para cancelar: ");
         String placa = leitor.nextLine();
         
         if (placa.equals("0")) {
             System.out.println("Operação cancelada. Retornando ao menu...");
-            return; // Interrompe o método e volta ao menu
+            return; 
         }
-        
-        // 4. Coleta os dados do sensor normalmente
+
         System.out.print("Categoria do Sensor (ex: Telemetria, Motor): ");
         String categoria = leitor.nextLine();
         
@@ -175,7 +172,6 @@ public class Equipe extends Usuario implements Autenticavel {
         }
     }
 
-    // --- LISTAR USUÁRIOS ATUALIZADO COM SUBMENU ---
     private void listarUsuarios(Scanner leitor) {
         System.out.println("\n--- LISTA DE USUÁRIOS CADASTRADOS ---");
     
@@ -201,10 +197,9 @@ public class Equipe extends Usuario implements Autenticavel {
         String escolha = leitor.nextLine();
 
         if (escolha.equals("0")) {
-            return; // Retorna imediatamente ao menu principal
+            return; 
         }
 
-        // Busca o usuário selecionado na lista
         Usuario usuarioSelecionado = null;
         for (Usuario u : usuarios) {
             if (u.getLogin().equalsIgnoreCase(escolha)) {
@@ -221,7 +216,6 @@ public class Equipe extends Usuario implements Autenticavel {
         }
     }
 
-    // --- NOVA FUNÇÃO: DETALHAR USUÁRIO, VEÍCULOS E SENSORES ---
     private void detalharUsuario(Usuario u, Scanner leitor) {
         System.out.println("\n=======================================================");
         System.out.println("FICHA COMPLETA DO USUÁRIO");
@@ -287,7 +281,6 @@ public class Equipe extends Usuario implements Autenticavel {
         System.out.println("\nPressione Enter para voltar ao menu...");
         leitor.nextLine(); 
     }
-    // ------------------------------------------------------------
 
     private void verFrotaFiltrada(Scanner leitor) {
         System.out.print("Digite um termo para filtrar (ou Enter para ver tudo): ");

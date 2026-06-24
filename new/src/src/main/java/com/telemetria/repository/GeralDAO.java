@@ -197,6 +197,7 @@ public class GeralDAO {
     private static void salvarLog(Usuario autor, String mensagem) {
         System.out.println("LOG: " + autor.getNome() + " - " + mensagem);
     }
+<<<<<<< HEAD
 
     public static void salvarLocalizacao(long dispositivoId, Localizacao locAtual) {
         String sql = "INSERT INTO localizacao (dispositivo_id, latitude, longitude, velocidade, data_hora) " +
@@ -219,4 +220,6 @@ public class GeralDAO {
             System.err.println("❌ Erro ao persistir a localização no banco: " + e.getMessage());
         }
     }
+=======
+>>>>>>> 6d331c1b5e9980155e9ecb9323464070251d9a95
 }

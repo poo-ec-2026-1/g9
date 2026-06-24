@@ -1,11 +1,9 @@
  package com.telemetria.model;
 
-import java.util.List;
-import java.util.Scanner;
-
 import com.telemetria.repository.GeralDAO;
 import com.telemetria.repository.UsuarioDAO;
-import com.telemetria.db.ConexaoBanco;
+import java.util.List;
+import java.util.Scanner;
 
 
 public class Gestor extends Usuario implements Autenticavel {
@@ -116,7 +114,6 @@ public class Gestor extends Usuario implements Autenticavel {
                 break;
             case 2:
                 if (podeExecutar("MANTER_VEICULO")) System.out.println("Redirecionando para Coleta de Telemetria...");
-                // Aqui você chamaria o método processarLeituraSensores()
                 break;
             case 3:
                 if (podeExecutar("VER_USUARIO")) listarUsuarios(leitor);
@@ -153,7 +150,6 @@ public class Gestor extends Usuario implements Autenticavel {
         }
     }
 
-    // --- MÉTODOS DE AÇÃO ---
 
     private void verFrotaFiltrada(Scanner leitor) {
         System.out.print("Digite um termo para filtrar (ou Enter para ver tudo): ");

@@ -1,16 +1,13 @@
  package com.telemetria.model;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
-/**
- * Representa um evento de alerta que aconteceu no histórico do sistema.
- * Registra o momento de início, fim e calcula a duração do alerta.
- */
+
 public class RegistroAlerta {
     
-    private GatilhoSensor gatilho; // CORREÇÃO: Usa o novo GatilhoSensor
-    private Veiculo veiculo;       // CORREÇÃO: Salva de qual veículo veio o alerta
+    private GatilhoSensor gatilho; 
+    private Veiculo veiculo;       
     private LocalDateTime horarioInicio;
     private LocalDateTime horarioFim;
     private boolean ativo;

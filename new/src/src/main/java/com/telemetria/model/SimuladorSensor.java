@@ -7,7 +7,7 @@ public class SimuladorSensor implements Runnable {
     private Sensor sensor;
     private Monitoramento monitor;
     private boolean rodando = true;
-    private Random gerador = new Random(); // Adicionado para controlar a sorte das anomalias
+    private Random gerador = new Random();
 
     public SimuladorSensor(Sensor sensor, Monitoramento monitor) {
         this.sensor = sensor;
@@ -24,26 +24,21 @@ public class SimuladorSensor implements Runnable {
         
         while (rodando) {
             try {
-                // Sorteia um número de 1 a 100 para definir o comportamento do sensor neste "tick"
                 int chance = gerador.nextInt(100) + 1; 
                 
                 if (chance <= 15) { 
-                    // 💥 15% de chance: Infringir o limite MÁXIMO (Pico)
-                    double pico = sensor.getLimiteMaximo() * 1.5; // Joga 50% acima do limite máximo
-                    if (pico == 0) pico = 150.0; // Trava de segurança caso o limite seja zero
+                    double pico = sensor.getLimiteMaximo() * 1.5; 
+                    if (pico == 0) pico = 150.0; 
                     
                     sensor.setValorAtual(pico);
                     System.out.println("\n⚠️ [ANOMALIA INJETADA] Pico de leitura no sensor " + sensor.getNome() + "!");
                     
                 } else if (chance <= 30) {
-                    // 📉 15% de chance: Infringir o limite MÍNIMO (Queda drástica/Falha)
-                    // Força uma queda para zero ou um valor negativo
                     double queda = -5.0; 
                     sensor.setValorAtual(queda);
                     System.out.println("\n⚠️ [ANOMALIA INJETADA] Queda brusca no sensor " + sensor.getNome() + "!");
                     
                 } else {
-                    // 🟢 70% de chance: Comportamento Normal 
                     sensor.simularLeituraAleatoria();
                 }
                 

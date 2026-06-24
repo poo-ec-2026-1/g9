@@ -12,9 +12,7 @@ public class GatilhoSensor {
         this.limiteMaximo = limiteMaximo;
     }
 
-    // =========================================================================
-    // GETTERS & SETTERS
-    // =========================================================================
+
     public Sensor getSensor() { 
         return this.sensor; 
     }
@@ -39,9 +37,7 @@ public class GatilhoSensor {
         this.limiteMaximo = limiteMaximo;
     }
 
-    // =========================================================================
-    // MÉTODOS UTILITÁRIOS
-    // =========================================================================
+
     @Override
     public String toString() {
         String nomeSensor = (sensor != null) ? sensor.getNome() : "Desconhecido";
