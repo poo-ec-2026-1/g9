@@ -55,7 +55,7 @@ public abstract class Usuario {
         this.login = login;
     }
     
-    public void setSenha(String Senha) {
+    public void setSenha(String senha) {
         this.senha = senha;
     }   
 
