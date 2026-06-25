@@ -2,7 +2,7 @@
 
 **Projeto:** JHC Telemetria — Plataforma de Gestão de Frotas com Monitoramento em Tempo Real  
 **Autor:** Vitor Augusto (Arquiteto de Software)  
-**Versão:** 1.1  
+**Versão:** 1.3 
 **Data:** Junho/2026
 
 ---
