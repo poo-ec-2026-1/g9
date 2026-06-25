@@ -41,70 +41,99 @@ A motivação surgiu de um evento real de março de 2026, em que uma paciente de
 
 O projeto segue uma arquitetura em camadas com separação clara de responsabilidades:
 
+
+```mermaid
+classDiagram
+    %% Interfaces e Classes Abstratas
+    class Autenticavel {
+        <<interface>>
+        +getQuantFatores()
+        +validarFator(...)
+    }
+
+    class Usuario {
+        <<abstract>>
+        #login
+        #senha
+        #nome
+        #email
+        #perfil
+        +autenticar()
+        +podeExecutar()
+        +acessarSistema()*
+    }
+
+    %% Herança e Implementação dos Usuários
+    Usuario <|-- Gestor : extends
+    Usuario <|-- Operador : extends
+    Usuario <|-- Equipe : extends
+    Usuario <|-- Cliente : extends
+    Usuario <|-- Motorista : extends
+    Usuario <|-- Instalador : extends
+
+    Autenticavel <|.. Gestor : implements
+    Autenticavel <|.. Operador : implements
+    Autenticavel <|.. Equipe : implements
+    Autenticavel <|.. Cliente : implements
+    Autenticavel <|.. Motorista : implements
+    Autenticavel <|.. Instalador : implements
+
+    %% Veículo e suas composições
+    class Veiculo
+    class Localizacao {
+        <<record>>
+        +lat
+        +long
+        +kmh
+        +timestamp
+    }
+    class Sensor
+    
+    Veiculo *-- "*" Sensor : composição (List)
+    Veiculo *-- "1" Localizacao : composição
+
+    %% Monitoramento e Alertas
+    class Monitoramento {
+        +regras
+        +gatilhos
+    }
+    class Central {
+        +receberAlerta()
+    }
+    class GatilhoSensor {
+        +limiteMax
+        +sensor_ref
+    }
+    class RegistroAlerta {
+        +horarioInicio
+        +ativo
+    }
+
+    Veiculo --> Monitoramento : possui/envia
+    Monitoramento --> Central : notifica
+    Monitoramento --> GatilhoSensor : avalia
+
+    %% Sensores
+    class SensorGeografico {
+        +lat
+        +long
+        +simularDeslocamento()
+    }
+    Sensor <|-- SensorGeografico : extends
+
+    %% Serviços e Processadores
+    class SimuladorSensor {
+        <<implements Runnable>>
+    }
+    class ProcessadorTelemetria
+    class GeralDAO
+    
+    SimuladorSensor ..> Monitoramento : usa
+    ProcessadorTelemetria ..> SensorGeografico : usa
+    ProcessadorTelemetria ..> GeralDAO : usa
 ```
-src/main/java/com/telemetria/
-│
-├── application/          # Ponto de entrada da aplicação JavaFX
-│   └── Main.java
-│
-├── controller/           # Controllers JavaFX — ligam a UI à lógica
-│   ├── LoginController.java
-│   ├── MenuController.java
-│   ├── RegistroLoginController.java
-│   ├── TelaXController.java           ← Painel do Administrador
-│   ├── TelaYController.java           ← Painel do Cliente
-│   ├── TelaZController.java           ← Painel do Operador
-│   ├── CadastroVeiculoController.java
-│   ├── NovoUsuarioFormController.java
-│   ├── NomeAlterarController.java
-│   ├── SenhaAlterarController.java
-│   └── LoginRequest.java
-│
-├── db/                   # Conexão e inicialização do banco SQLite
-│   ├── ConexaoBanco.java              ← Singleton de conexão JDBC
-│   └── InicializadorBanco.java        ← Cria tabelas na primeira execução
-│
-├── model/                # Entidades e lógica de domínio (OOP puro)
-│   ├── Usuario.java                   ← Classe abstrata base
-│   ├── Autenticavel.java              ← Interface de autenticação multifator
-│   ├── PerfilAcesso.java              ← Enum com níveis e permissões (RBAC)
-│   ├── Gestor.java                    ← extends Usuario, implements Autenticavel
-│   ├── Operador.java                  ← extends Usuario, implements Autenticavel
-│   ├── Equipe.java                    ← extends Usuario, implements Autenticavel (Admin)
-│   ├── Cliente.java                   ← extends Usuario, implements Autenticavel
-│   ├── Motorista.java                 ← extends Usuario, implements Autenticavel
-│   ├── Instalador.java                ← extends Usuario, implements Autenticavel
-│   ├── Veiculo.java
-│   ├── Sensor.java
-│   ├── SensorGeografico.java          ← extends Sensor (GPS com simulação de deslocamento)
-│   ├── Localizacao.java               ← Record imutável (lat, long, velocidade, timestamp)
-│   ├── GatilhoSensor.java             ← Regra de alerta por limite máximo
-│   ├── Monitoramento.java             ← Avalia leituras e dispara alarmes
-│   ├── Central.java                   ← Recebe alertas de múltiplos veículos
-│   ├── RegistroAlerta.java            ← Ciclo de vida de um alerta (início, fim, duração)
-│   ├── SimuladorSensor.java           ← Simula transmissão contínua em Thread separada
-│   ├── ProcessadorTelemetria.java     ← Orquestra ciclo GPS → banco de dados
-│   └── Login.java                     ← Fluxo de autenticação (modo console)
-│
-├── repository/           # DAOs — acesso ao banco de dados SQLite
-│   ├── GeralDAO.java                  ← Consultas gerais (frota, clientes, localização)
-│   ├── UsuarioDAO.java
-│   ├── VeiculoDAO.java
-│   ├── SensorDAO.java
-│   └── LogDAO.java
-│
-└── fxml/                 # Telas da interface gráfica (JavaFX)
-    ├── login.fxml
-    ├── Menu.fxml
-    ├── Sistema.fxml
-    ├── TelaX.fxml                     ← Painel do Administrador
-    ├── TelaY.fxml                     ← Painel do Cliente
-    ├── TelaZ.fxml                     ← Painel do Operador
-    ├── NovoUsuarioForm.fxml
-    ├── AlterarDados.fxml
-    ├── AlterarSenha.fxml
-    └── registrologin.fxml
-```
+
+
 
 > A pasta `old/` na raiz do repositório contém versões anteriores das classes, mantidas apenas como histórico de evolução do projeto. Não faz parte da versão ativa.
 
@@ -114,7 +143,7 @@ src/main/java/com/telemetria/
 
 ### Hierarquia de Classes
 
-```
+```mermaid
             ┌──────────────────────┐
             │    <<interface>>     │
             │     Autenticavel     │
