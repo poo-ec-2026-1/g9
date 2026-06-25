@@ -143,7 +143,7 @@ classDiagram
 
 ### Hierarquia de Classes
 
-```mermaid
+```
             ┌──────────────────────┐
             │    <<interface>>     │
             │     Autenticavel     │
