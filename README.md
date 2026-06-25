@@ -7,7 +7,7 @@
 [![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.java.com)
 [![JavaFX](https://img.shields.io/badge/JavaFX-UI-blue?style=for-the-badge)](https://openjfx.io/)
 [![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-
+[![BlueJ](https://img.shields.io/badge/BlueJ-IDE-orange?style=for-the-badge)](https://www.bluej.org/)
 
 *Projeto acadêmico — Disciplina de Programação Orientada a Objetos · UFG · 2026*
 
@@ -29,11 +29,11 @@ A motivação surgiu de um evento real de março de 2026, em que uma paciente de
 | 📍 **Rastreamento GPS** | Leitura de latitude, longitude e velocidade em tempo real com link para Google Maps |
 | 📡 **Sensores** | Cadastro, vinculação a veículos e disparo de alertas ao exceder limites configurados |
 | 🚨 **Central de Alertas** | Recepção de emergências, localização do veículo e listagem de ocorrências ativas |
-| 🖥️ **Interface Gráfica** | Painéis JavaFX distintos por cargo (Admin, Operador/Instalador, Cliente) |
-| 👥 **Gestão de Usuários** | CRUD completo de usuários com controle de permissões por nível |
+| 🖥️ **Interface Gráfica** | Painéis JavaFX distintos por cargo (Administrador, Operador, Cliente) |
+| 👥 **Gestão de Usuários** | Cadastro, edição e exclusão de usuários com controle de permissões por nível |
 | 🚗 **Gestão de Frota** | Cadastro de veículos com identificador (placa/chassi), tipo e associação a sensores |
-| 📋 **Logs do Sistema** | Registro de ações com timestamp, limpeza e auditoria reservada ao Administrador |
-| 🗄️ **Persistência** | Banco de dados PostgreSQL via JDBC com transações e batch operations |
+| 📋 **Logs do Sistema** | Registro de ações com timestamp, visualização e limpeza reservada ao Administrador |
+| 🗄️ **Persistência** | Banco de dados SQLite embutido via JDBC — sem necessidade de servidor externo |
 
 ---
 
@@ -44,45 +44,69 @@ O projeto segue uma arquitetura em camadas com separação clara de responsabili
 ```
 src/main/java/com/telemetria/
 │
-├── application/          # Ponto de entrada da aplicação
+├── application/          # Ponto de entrada da aplicação JavaFX
 │   └── Main.java
 │
 ├── controller/           # Controllers JavaFX — ligam a UI à lógica
 │   ├── LoginController.java
 │   ├── MenuController.java
-│   ├── TelaXController.java       ← Painel do Administrador
-│   ├── TelaYController.java       ← Painel do Cliente
-│   ├── TelaZController.java       ← Painel do Instalador/Operador
+│   ├── RegistroLoginController.java
+│   ├── TelaXController.java           ← Painel do Administrador
+│   ├── TelaYController.java           ← Painel do Cliente
+│   ├── TelaZController.java           ← Painel do Operador
 │   ├── CadastroVeiculoController.java
 │   ├── NovoUsuarioFormController.java
-│   ├── RegistroLoginController.java
 │   ├── NomeAlterarController.java
-│   └── SenhaAlterarController.java
+│   ├── SenhaAlterarController.java
+│   └── LoginRequest.java
+│
+├── db/                   # Conexão e inicialização do banco SQLite
+│   ├── ConexaoBanco.java              ← Singleton de conexão JDBC
+│   └── InicializadorBanco.java        ← Cria tabelas na primeira execução
 │
 ├── model/                # Entidades e lógica de domínio (OOP puro)
-│   ├── Usuario.java               ← Classe abstrata base
-│   ├── Autenticavel.java          ← Interface de autenticação multifator
-│   ├── PerfilAcesso.java          ← Enum com níveis e permissões (RBAC)
-│   ├── Gestor.java                ← extends Usuario, implements Autenticavel
-│   ├── Operador.java              ← extends Usuario, implements Autenticavel
-│   ├── Equipe.java                ← extends Usuario, implements Autenticavel (Admin)
-│   ├── Cliente.java               ← extends Usuario, implements Autenticavel
-│   ├── Instalador.java            ← extends Usuario, implements Autenticavel
+│   ├── Usuario.java                   ← Classe abstrata base
+│   ├── Autenticavel.java              ← Interface de autenticação multifator
+│   ├── PerfilAcesso.java              ← Enum com níveis e permissões (RBAC)
+│   ├── Gestor.java                    ← extends Usuario, implements Autenticavel
+│   ├── Operador.java                  ← extends Usuario, implements Autenticavel
+│   ├── Equipe.java                    ← extends Usuario, implements Autenticavel (Admin)
+│   ├── Cliente.java                   ← extends Usuario, implements Autenticavel
+│   ├── Motorista.java                 ← extends Usuario, implements Autenticavel
+│   ├── Instalador.java                ← extends Usuario, implements Autenticavel
 │   ├── Veiculo.java
 │   ├── Sensor.java
-│   ├── Localizacao.java           ← Record imutável (lat, long, velocidade, timestamp)
-│   ├── Central.java
-│   ├── Monitoramento.java
-│   └── Login.java
+│   ├── SensorGeografico.java          ← extends Sensor (GPS com simulação de deslocamento)
+│   ├── Localizacao.java               ← Record imutável (lat, long, velocidade, timestamp)
+│   ├── GatilhoSensor.java             ← Regra de alerta por limite máximo
+│   ├── Monitoramento.java             ← Avalia leituras e dispara alarmes
+│   ├── Central.java                   ← Recebe alertas de múltiplos veículos
+│   ├── RegistroAlerta.java            ← Ciclo de vida de um alerta (início, fim, duração)
+│   ├── SimuladorSensor.java           ← Simula transmissão contínua em Thread separada
+│   ├── ProcessadorTelemetria.java     ← Orquestra ciclo GPS → banco de dados
+│   └── Login.java                     ← Fluxo de autenticação (modo console)
 │
-└── repository/           # DAOs — acesso ao banco de dados
-    ├── ConexaoBanco.java
-    ├── UsuarioDAO.java
-    ├── VeiculoDAO.java
-    ├── SensorDAO.java
-    ├── GeralDAO.java
-    └── LogDAO.java
+├── repository/           # DAOs — acesso ao banco de dados SQLite
+│   ├── GeralDAO.java                  ← Consultas gerais (frota, clientes, localização)
+│   ├── UsuarioDAO.java
+│   ├── VeiculoDAO.java
+│   ├── SensorDAO.java
+│   └── LogDAO.java
+│
+└── fxml/                 # Telas da interface gráfica (JavaFX)
+    ├── login.fxml
+    ├── Menu.fxml
+    ├── Sistema.fxml
+    ├── TelaX.fxml                     ← Painel do Administrador
+    ├── TelaY.fxml                     ← Painel do Cliente
+    ├── TelaZ.fxml                     ← Painel do Operador
+    ├── NovoUsuarioForm.fxml
+    ├── AlterarDados.fxml
+    ├── AlterarSenha.fxml
+    └── registrologin.fxml
 ```
+
+> A pasta `old/` na raiz do repositório contém versões anteriores das classes, mantidas apenas como histórico de evolução do projeto. Não faz parte da versão ativa.
 
 ---
 
@@ -98,24 +122,25 @@ src/main/java/com/telemetria/
             │  + validarFator(...) │
             └──────────┬───────────┘
                        │ implements
-          ┌────────────┼───────────────┐──────────────┐
-          │            │               │              │
-    ┌─────┴────┐ ┌─────┴────┐ ┌───────┴──┐ ┌────────┴───┐ ┌───────────┐
-    │  Gestor  │ │ Operador │ │  Equipe  │ │  Cliente   │ │ Instalador│
-    └──────────┘ └──────────┘ └──────────┘ └────────────┘ └───────────┘
-          │            │               │              │             │
-          └────────────┴───────────────┴──────────────┴─────────────┘
-                                       │ extends
-                               ┌───────┴────────┐
-                               │    Usuario      │  <<abstract>>
-                               │  # login        │
-                               │  # senha        │
-                               │  # nome         │
-                               │  # perfil       │
-                               │  + autenticar() │
-                               │  + podeExecutar()│
-                               │  + acessarSistema() <<abstract>>
-                               └─────────────────┘
+       ┌───────────────┼──────────────┬──────────────┬──────────────┐
+       │               │              │              │              │
+ ┌─────┴────┐  ┌───────┴──┐  ┌───────┴──┐  ┌───────┴──┐  ┌────────┴───┐  ┌───────────┐
+ │  Gestor  │  │ Operador │  │  Equipe  │  │  Cliente │  │  Motorista │  │ Instalador│
+ └──────────┘  └──────────┘  └──────────┘  └──────────┘  └────────────┘  └───────────┘
+       │               │              │              │              │              │
+       └───────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
+                                      │ extends
+                              ┌───────┴────────┐
+                              │    Usuario      │  <<abstract>>
+                              │  # login        │
+                              │  # senha        │
+                              │  # nome         │
+                              │  # email        │
+                              │  # perfil       │
+                              │  + autenticar() │
+                              │  + podeExecutar()│
+                              │  + acessarSistema() <<abstract>>
+                              └─────────────────┘
 
 
   ┌─────────────┐  composição   ┌──────────────────┐
@@ -124,19 +149,45 @@ src/main/java/com/telemetria/
   │             │  composição   ┌──────────────────┐
   │             ├───────────────►   Localizacao     │  <<record>>
   └──────┬──────┘               │  lat, long, kmh  │
-         │ referência           │  timestamp       │
+         │                      │  timestamp       │
          ▼                      └──────────────────┘
-  ┌─────────────┐
-  │ Monitoramento│ ──────────────► Central
-  │ + temErro() │  notifica       │ + receberAlerta()
-  └─────────────┘                 └──────────────────
+  ┌──────────────┐
+  │ Monitoramento│ ─────────────► Central
+  │ + regras     │  notifica      │ + receberAlerta()
+  │ + gatilhos   │               └──────────────────
+  └──────────────┘
+         │ avalia
+         ▼
+  ┌──────────────┐         ┌──────────────────┐
+  │ GatilhoSensor│         │  RegistroAlerta  │
+  │ + limiteMax  │         │  + horarioInicio │
+  │ + sensor ref │         │  + ativo         │
+  └──────────────┘         └──────────────────┘
+
+  ┌──────────────────┐  extends  ┌────────┐
+  │  SensorGeografico├───────────► Sensor │
+  │  + lat, long     │           └────────┘
+  │  + simularDeslocamento()     
+  └──────────────────┘
+
+  ┌──────────────────┐  usa  ┌──────────────────┐
+  │ SimuladorSensor  ├───────► Monitoramento     │
+  │ implements       │       └──────────────────┘
+  │ Runnable         │
+  └──────────────────┘
+
+  ┌──────────────────────┐  usa  ┌──────────────────┐
+  │ ProcessadorTelemetria├───────► SensorGeografico  │
+  │                      ├───────► GeralDAO          │
+  └──────────────────────┘       └──────────────────┘
 ```
 
 ### Padrões OOP Aplicados
 
 | Conceito | Implementação |
 |---|---|
-| **Herança** | `Gestor`, `Operador`, `Equipe`, `Cliente`, `Instalador` estendem `Usuario` |
+| **Herança** | `Gestor`, `Operador`, `Equipe`, `Cliente`, `Motorista`, `Instalador` estendem `Usuario` |
+| **Herança simples** | `SensorGeografico` estende `Sensor`, herdando toda a lógica de leitura |
 | **Interface** | `Autenticavel` define contrato para autenticação com 1, 2 ou 3 fatores |
 | **Polimorfismo** | `acessarSistema()` com comportamento distinto em cada subclasse |
 | **Classe Abstrata** | `Usuario` define o template comum; impede instanciação direta |
@@ -144,7 +195,8 @@ src/main/java/com/telemetria/
 | **Record (Java 16+)** | `Localizacao` como tipo de valor imutável com método auxiliar `toGoogleMapsUrl()` |
 | **Enum com comportamento** | `PerfilAcesso` encapsula nível numérico, descrição e lógica de permissões via `temPermissao()` |
 | **Composição** | `Veiculo` delega GPS a `Localizacao` e mantém `List<Sensor>` |
-| **DAO Pattern** | Camada `repository` isola todo o acesso ao PostgreSQL da lógica de domínio |
+| **Runnable / Thread** | `SimuladorSensor` roda em thread separada para simular transmissão contínua |
+| **DAO Pattern** | Camada `repository/` isola todo o acesso ao SQLite da lógica de domínio |
 | **Método Template** | `podeExecutar()` em `Usuario` delega para `PerfilAcesso.temPermissao()` |
 | **RBAC** | Enum `PerfilAcesso` centraliza regras de autorização por ação e nível |
 
@@ -153,14 +205,17 @@ src/main/java/com/telemetria/
 ## 👥 Controle de Acesso (RBAC)
 
 ```
-Nível 0 — CLIENTE
-  ✔ Visualizar seus próprios sensores vinculados
+Nível 0 — MOTORISTA
+  ✔ Visualizar veículo vinculado e seus sensores
+  ✔ Calcular rota e iniciar viagem com transmissão de GPS
   ✔ Autenticação por 1 fator (senha)
 
 Nível 1 — FROTISTA (Gestor)
   ✔ Tudo do nível anterior
   ✔ Visualizar frota completa com filtros
-  ✔ Cadastrar e manter veículos/sensores
+  ✔ Cadastrar e manter veículos e sensores
+  ✔ Enviar mensagens para a Central
+  ✔ Autenticação por 2 fatores (senha + token)
 
 Nível 2 — OPERADOR
   ✔ Tudo do nível anterior
@@ -177,12 +232,133 @@ Nível 3 — ADMIN (Equipe)
 
 ---
 
+## 🖥️ Fluxo de Navegação (Interface JavaFX)
+
+```
+Main.java
+    │
+    └──► login.fxml (LoginController)
+              │
+              ├── Credenciais válidas
+              │         │
+              │         ├── administrador ──► TelaX.fxml  [vincular sensores, ver usuários, logs]
+              │         │
+              │         ├── operador ────────► TelaZ.fxml  [instalar sensores, telemetria]
+              │         │
+              │         └── cliente ─────────► TelaY.fxml  [ver meus sensores]
+              │
+              └── Link "Cadastrar" ──► registrologin.fxml (RegistroLoginController)
+```
+
+Após o login, o `MenuController` (carregado via `Menu.fxml`) exibe as opções comuns a todos os perfis: acessar módulo, alterar dados pessoais, alterar senha, excluir conta e logout.
+
+---
+
+## 🗄️ Banco de Dados (SQLite)
+
+O sistema utiliza **SQLite** como banco de dados embutido. O arquivo `jhctelemetria.db` é criado automaticamente na primeira execução pelo `InicializadorBanco.java` — nenhuma instalação de servidor é necessária.
+
+### Estrutura das Tabelas
+
+```sql
+CREATE TABLE IF NOT EXISTS usuario (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome          TEXT NOT NULL,
+    email         TEXT UNIQUE NOT NULL,
+    login         TEXT UNIQUE NOT NULL,
+    senha         TEXT NOT NULL,
+    nivel_acesso  INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS veiculos (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id         INTEGER NOT NULL,
+    motorista_id       INTEGER,
+    identificador      TEXT NOT NULL,
+    tipo_identificador TEXT,
+    tipo_veiculo       TEXT,
+    ativo              INTEGER DEFAULT 1,
+    status_viagem      TEXT DEFAULT 'PARADO',
+    FOREIGN KEY (usuario_id)   REFERENCES usuario(id) ON DELETE CASCADE,
+    FOREIGN KEY (motorista_id) REFERENCES usuario(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS sensores (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    veiculo_id     INTEGER NOT NULL,
+    categoria      TEXT,
+    nome           TEXT NOT NULL,
+    und_medida     TEXT,
+    tipo_dado      TEXT,
+    valor_atual    REAL,
+    limite_maximo  REAL,
+    atualizado_em  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (veiculo_id) REFERENCES veiculos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS localizacao (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    dispositivo_id INTEGER NOT NULL,
+    latitude       REAL NOT NULL,
+    longitude      REAL NOT NULL,
+    velocidade     REAL,
+    data_hora      DATETIME,
+    FOREIGN KEY (dispositivo_id) REFERENCES veiculos(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS logs (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_email  TEXT,
+    acao           TEXT NOT NULL,
+    data_hora      DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS mensagens (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    remetente_email TEXT NOT NULL,
+    conteudo        TEXT NOT NULL,
+    data_hora       DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Modelo de Dados
+
+```
+usuario ──────────────────────────────────────────────┐
+│ id, nome, email, login, senha, nivel_acesso         │
+└─────────────────────────────────────────────────────┘
+         │ 1
+         │ N
+      veiculos ───────────────────────────────────────┐
+      │ id, usuario_id (FK), motorista_id (FK)        │
+      │ identificador, tipo_identificador             │
+      │ tipo_veiculo, ativo, status_viagem            │
+      └────────────────────────────────────────────────┘
+               │ 1
+               │ N
+            sensores
+            │ id, veiculo_id (FK)
+            │ categoria, nome, und_medida
+            │ tipo_dado, valor_atual, limite_maximo
+
+      localizacao                    logs
+      │ dispositivo_id (FK)          │ usuario_email
+      │ latitude, longitude          │ acao
+      │ velocidade, data_hora        │ data_hora
+
+      mensagens
+      │ remetente_email
+      │ conteudo, data_hora
+```
+
+---
+
 ## 🛠️ Tecnologias
 
-- **Java 17+** com features modernas (`record`, `switch` expressions, `instanceof` pattern)
+- **Java 17+** com features modernas (`record`, `switch` expressions, `Text Block`, `instanceof` pattern)
 - **JavaFX** — interface gráfica com FXML, `@FXML`, controllers e navegação entre cenas
-- **Spring Boot** — estrutura base da aplicação
-- **PostgreSQL** — banco de dados relacional com JDBC puro
+- **SQLite** — banco de dados relacional embutido via JDBC puro (sem servidor externo)
+- **BlueJ** — ambiente de desenvolvimento utilizado no projeto
 - **Git / GitHub** — controle de versão com histórico desde maio de 2026
 
 ---
@@ -190,9 +366,9 @@ Nível 3 — ADMIN (Equipe)
 ## ⚙️ Pré-requisitos
 
 - Java 17 ou superior (`java --version`)
-- PostgreSQL 13 ou superior
-- JavaFX SDK (caso não fornecido via Maven/Gradle)
-- Maven ou Gradle
+- JavaFX SDK compatível com Java 17
+- BlueJ 5+ (ou outra IDE com suporte a JavaFX)
+- Nenhum servidor de banco de dados necessário — o SQLite é embutido
 
 ---
 
@@ -205,88 +381,29 @@ git clone https://github.com/VictorEduardo-coder/Gestao-de-Frotas.git
 cd Gestao-de-Frotas
 ```
 
-### 2. Configure o banco de dados PostgreSQL
+### 2. Inicialize o banco de dados
 
-```sql
--- Execute no psql ou em seu cliente SQL preferido
-CREATE DATABASE jhctelemetria;
-
-\c jhctelemetria
-
-CREATE TABLE usuario (
-    id            SERIAL PRIMARY KEY,
-    nome          VARCHAR(100)        NOT NULL,
-    email         VARCHAR(100) UNIQUE NOT NULL,
-    login         VARCHAR(50) UNIQUE  NOT NULL,
-    senha         VARCHAR(255)        NOT NULL,
-    nivel_acesso  INTEGER             NOT NULL DEFAULT 0
-);
-
-CREATE TABLE veiculos (
-    id                SERIAL PRIMARY KEY,
-    usuario_id        INTEGER REFERENCES usuario(id),
-    identificador     VARCHAR(50)  NOT NULL,
-    tipo_identificador VARCHAR(30),
-    tipo_veiculo      VARCHAR(50),
-    ativo             BOOLEAN      DEFAULT true
-);
-
-CREATE TABLE sensores (
-    id             SERIAL PRIMARY KEY,
-    veiculo_id     INTEGER REFERENCES veiculos(id),
-    categoria      VARCHAR(50),
-    nome           VARCHAR(100) NOT NULL,
-    und_medida     VARCHAR(20),
-    tipo_dado      VARCHAR(20),
-    valor_atual    DOUBLE PRECISION DEFAULT 0,
-    limite_maximo  DOUBLE PRECISION DEFAULT 0,
-    atualizado_em  TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE localizacao (
-    id              SERIAL PRIMARY KEY,
-    dispositivo_id  BIGINT      NOT NULL,
-    latitude        DOUBLE PRECISION NOT NULL,
-    longitude       DOUBLE PRECISION NOT NULL,
-    velocidade      DOUBLE PRECISION,
-    data_hora       TIMESTAMP   NOT NULL
-);
-
-CREATE TABLE logs (
-    id             SERIAL PRIMARY KEY,
-    usuario_email  VARCHAR(100),
-    acao           TEXT,
-    data_hora      TIMESTAMP DEFAULT NOW()
-);
-```
-
-### 3. Configure a conexão com o banco
-
-Edite o arquivo `src/src/main/java/com/telemetria/repository/ConexaoBanco.java`:
-
-```java
-private static final String URL     = "jdbc:postgresql://localhost:5432/jhctelemetria";
-private static final String USUARIO = "seu_usuario_postgres";
-private static final String SENHA   = "sua_senha_postgres";
-```
-
-> ⚠️ **Segurança:** nunca suba credenciais reais para o repositório. Prefira variáveis de ambiente:
-> ```bash
-> export DB_URL=jdbc:postgresql://localhost:5432/jhctelemetria
-> export DB_USER=postgres
-> export DB_PASS=sua_senha
-> ```
-
-### 4. Execute a aplicação
+Na primeira execução, rode o `InicializadorBanco.java` diretamente para criar o arquivo `jhctelemetria.db` e todas as tabelas:
 
 ```bash
-# Via Maven
-mvn spring-boot:run
-
-# Ou compile e execute diretamente
-javac -cp . GestaofrotasApplication.java
-java com.telemetria.model.GestaofrotasApplication
+# Via linha de comando (com JavaFX no classpath)
+java com.telemetria.db.InicializadorBanco
 ```
+
+Ou, no BlueJ, clique com o botão direito em `InicializadorBanco` e execute o método `main`.
+
+> O arquivo `jhctelemetria.db` será criado automaticamente na pasta raiz do projeto. Nas execuções seguintes, este passo não é necessário.
+
+### 3. Execute a aplicação
+
+```bash
+# Via linha de comando
+java --module-path /caminho/para/javafx-sdk/lib \
+     --add-modules javafx.controls,javafx.fxml \
+     -cp . com.telemetria.application.Main
+```
+
+Ou, no BlueJ, execute o método `main` da classe `Main`.
 
 ---
 
@@ -294,57 +411,35 @@ java com.telemetria.model.GestaofrotasApplication
 
 Ao iniciar, a tela de **Login** é exibida. O sistema redireciona automaticamente para o painel correto conforme o cargo do usuário autenticado.
 
-### Usuários de desenvolvimento (pré-cadastrados)
+### Usuários de desenvolvimento (pré-cadastrados em memória)
 
 | Login | Senha | Cargo | Painel |
 |---|---|---|---|
-| `adm` | `123` | Administrador | TelaX — acesso total |
+| `adm` | `123` | Administrador | TelaX — vincular sensores, ver usuários, logs |
 | `adm1` | `1234` | Operador | TelaZ — telemetria e instalação |
 
-> Novos usuários podem ser criados pela tela de registro ou pelo painel do Administrador.
-
-### Fluxo de navegação
-
-```
-Tela de Login
-    │
-    ├── Administrador ──► TelaX  [vincular/ver sensores, editar/excluir usuários, logs]
-    │
-    ├── Operador/Instal. ─► TelaZ  [instalar sensores, verificar telemetria]
-    │
-    └── Cliente ──────────► TelaY  [ver meus sensores vinculados]
-```
+> Novos usuários podem ser criados pela tela de registro acessível na própria tela de login.
 
 ---
 
-## 🗄️ Modelo de Dados
+## ⚠️ Observações Importantes
 
-```
-usuario ──────────────────────────────────────┐
-│ id (PK)                                     │
-│ nome, email, login, senha, nivel_acesso     │
-└─────────────────────────────────────────────┘
-         │ 1
-         │ N
-      veiculos ───────────────────────────────┐
-      │ id (PK)                               │
-      │ usuario_id (FK → usuario)             │
-      │ identificador, tipo_identificador     │
-      │ tipo_veiculo, ativo                   │
-      └───────────────────────────────────────┘
-               │ 1
-               │ N
-            sensores
-            │ id (PK)
-            │ veiculo_id (FK → veiculos)
-            │ categoria, nome, und_medida
-            │ tipo_dado, valor_atual, limite_maximo
+- A pasta `old/` na raiz contém versões anteriores das classes, mantidas apenas como histórico. Não faz parte da versão ativa do sistema.
+- O banco de dados utilizado é **SQLite** (arquivo `jhctelemetria.db`), não PostgreSQL. Nenhum servidor externo é necessário.
+- Senhas são armazenadas em texto puro no protótipo atual. Em ambiente de produção, aplique hashing com **bcrypt** ou similar.
+- Os tokens de autenticação multifator estão fixos (`"000000"`) para fins de demonstração acadêmica.
+- Usuários criados pelo formulário de registro são armazenados **em memória** durante a sessão (via `RegistroLoginController`). A integração completa com o banco SQLite para persistência de novos usuários está prevista para as próximas etapas.
 
-      localizacao                    logs
-      │ dispositivo_id               │ usuario_email
-      │ latitude, longitude          │ acao
-      │ velocidade, data_hora        │ data_hora
-```
+---
+
+## 📅 Histórico de Versões
+
+| Data | Descrição |
+|---|---|
+| Maio/2026 | Modelagem inicial — interfaces, hierarquia de usuários, `Localizacao` como record |
+| Maio/2026 | Implementação dos perfis de acesso (`PerfilAcesso` enum), `Equipe`, `Instalador`, `Motorista` |
+| Maio/2026 | Adição de `SimuladorSensor`, `GatilhoSensor`, `Monitoramento`, `Central`, `RegistroAlerta` |
+| Junho/2026 | Interface JavaFX completa, migração para SQLite, `InicializadorBanco`, `ProcessadorTelemetria`, `SensorGeografico` |
 
 ---
 
@@ -360,23 +455,8 @@ usuario ────────────────────────
 
 ---
 
-## 📅 Histórico de Versões
-
-| Data | Descrição |
-|---|---|
-| Maio/2026 | Modelagem inicial — interfaces, hierarquia de usuários, `Localizacao` como record |
-| Maio/2026 | Implementação dos perfis de acesso (`PerfilAcesso` enum), `Equipe`, `Instalador` |
-| Junho/2026 | Controllers JavaFX, integração com PostgreSQL, logs, gestão de frota e sensores |
-
----
-
-## ⚠️ Observações Importantes
-
-- A pasta `old/` contém versões anteriores das classes, mantidas apenas como histórico de evolução do projeto.
-- O sistema possui duas camadas DAO (`dao/` e `repository/`) — a camada `repository/` é a versão atual e mais completa, enquanto `dao/` é uma versão mais antiga em processo de substituição.
-- Senhas são armazenadas em texto puro no protótipo atual. Em ambiente de produção, aplique hashing com **bcrypt** ou similar.
-- Os tokens de autenticação multifator estão fixos (`"000000"`) para fins de demonstração acadêmica.
-
----
-
 <div align="center">
+
+*JHC Telemetria · UFG · 2026*
+
+</div>
